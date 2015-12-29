@@ -1,0 +1,24 @@
+description "gthx IRC bot"
+author "gunnbr@gthx.net"
+
+start on runlevel [2345]
+stop on runlevel [!2345]
+
+env GTHX_NICK="<bot nick>"
+env GTHX_CHANNELS="#<channel1>,#<channel2>"
+env GTHX_NICKSERV_PASSWORD="<password for nickserver>""
+env GTHX_TRACKED_NICK="<bot being tracked nick>"
+
+env GTHX_MYSQL_USER="<MySQL username>"
+env GTHX_MYSQL_PASSWORD="<MySQL password>"
+env GTHX_MYSQL_DATABASE="<MySQL database name>"
+
+env GTHX_EMAIL_USER="<email user>"
+env GTHX_EMAIL_PASSWORD="<email password>"
+env GTHX_EMAIL_SMTP_SERVER="<SMTP server>:<SMTP port>"
+env GTHX_EMAIL_FROM="<address email appears from>"
+env GTHX_EMAIL_TO="<address email gets delivered to>"
+
+respawn
+
+exec /usr/sbin/gthx/gthx.py
