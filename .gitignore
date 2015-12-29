@@ -1,3 +1,9 @@
+# Don't check in the local version of the upstart file.
+*.local
+
+# Ignore emacs auto-saves
+*~
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
