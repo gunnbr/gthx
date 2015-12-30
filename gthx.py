@@ -488,13 +488,12 @@ class Gthx(irc.IRCClient):
                 else:
                     self.msg(replyChannel, "%s: Okay, but %s didn't exist anyway" % (user, query))
         
-    def action(self, sender, recip, message):
+    def action(self, sender, channel, message):
         m = re.match("([a-zA-Z\*_\\\[\]\{\}^`|\*][a-zA-Z0-9\*_\\\[\]\{\}^`|-]*)", sender)
         if m:
             sender = m.group(1)
-        if recip == self.channel:
             print "* %s %s" % (sender, message)
-            self.db.updateSeen(sender, recip, "* %s %s" % (sender, message))
+            self.db.updateSeen(sender, channel, "* %s %s" % (sender, message))
             
 class GthxFactory(protocol.ClientFactory):
     """A factory for Gthx.
