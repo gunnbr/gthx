@@ -7,7 +7,7 @@ sent to the bot being tracked to keep its own database up to date. When the trac
 replies to factoids and relays the tells.
 
 ## History
-Gthx was originally written for #reprap where their main box, "kthx" crashed often due to bugs in
+Gthx was originally written for #reprap where their main bot, "kthx" crashed often due to bugs in
 [drupal bot](https://www.drupal.org/project/bot), most notably handling of emoji.
 
 I was looking for an excuse to do a bigger project in python, so that's why I chose it. As is clear
