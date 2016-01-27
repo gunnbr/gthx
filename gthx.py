@@ -23,7 +23,7 @@ from DbAccess import Tell
 
 from Email import Email
 
-VERSION = "gthx version 0.14 2015-12-29"
+VERSION = "gthx version 0.15 2015-01-26"
 trackednick = ""
 channel = ""
 mynick = ""
@@ -83,7 +83,8 @@ class Gthx(irc.IRCClient):
         self.googleQuery = re.compile("\s*google\s+(.*?)\s+for\s+([a-zA-Z\*_\\\[\]\{\}^`|\*][a-zA-Z0-9\*_\\\[\]\{\}^`|-]*)")
         self.uptimeStart = datetime.datetime.now()
         self.lurkerReplyChannel = ""
-        
+        self.password = os.getenv("GTHX_NICKSERV_PASSWORD")
+
     def connectionMade(self):
         self.log("IRC Connection made")
         irc.IRCClient.connectionMade(self)
@@ -103,11 +104,6 @@ class Gthx(irc.IRCClient):
     def signedOn(self):
         """Called when bot has succesfully signed on to server."""
         self.log("Signed on to the IRC server")
-        # Seems like a good time to also register with the nickserv
-        nickservPassword = os.getenv("GTHX_NICKSERV_PASSWORD")
-        if (nickservPassword):
-            print "Identifying with the nickserv"
-            self.msg("nickserv", "IDENTIFY %s" % nickservPassword)
         self.channelList = [channel for channel in self.factory.channels.split(',')]
         for channelm in self.channelList:
             self.log("Joining channel %s" % channelm)
@@ -193,7 +189,7 @@ class Gthx(irc.IRCClient):
             self.emailClient.threadsend("%s status" % self.nickname, "%s has been renamed to %s--checking WHOIS" % (oldname, newname))
 
     def irc_unknown(self, prefix, command, params):
-        #print "Unknown command '%s' '%s' '%s'" % (prefix, command, params)
+        print "Unknown command '%s' '%s' '%s'" % (prefix, command, params)
         if (command == 'RPL_NAMREPLY'):
             if (self.lurkerReplyChannel == ""):
                 return
