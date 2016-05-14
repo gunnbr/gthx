@@ -29,7 +29,9 @@ grant all on gthx.* to 'gthxuser' identified by 'password';
 ```
 
 Run the gthx DB install script:
-    mysql -u root -p [password] [databasename] < createDB.sql
+```
+mysql -u gthxuser -p [password] [databasename] < createDB.sql
+```
 
 Copy the upstart script `gthx-upstart` to `gthx-upstart.local`.
 
