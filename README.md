@@ -48,9 +48,9 @@ mysql -u root -p[root_password] [database_name] < backup_filename.sql
 
 Copy the upstart script `gthx-upstart` to `gthx-upstart.local`.
 
-Edit gthx-upstart.local to configure everything.
+Edit `gthx-upstart.local` to configure everything.
 
-Run install.sh to copy the gthx to /usr/sbin/gthx and the upstart script to /etc/init.
+Run `install.sh` to copy the gthx to /usr/sbin/gthx and the upstart script to /etc/init.
 
 Run `sudo service gthx start` to start gthx. (The upstart script can, of course, be changed to match the name of your bot.)
 
