@@ -236,7 +236,7 @@ class Gthx(irc.IRCClient):
         print "Got WHOISCHANNELS with prefix '%s' and params '%s'" % (prefix, params)
         print "%s is in channels %s" % (params[1], params[2])
         self.gotwhoischannel = True
-        trackedchannels = params[2].split(" ")
+        trackedchannels = params[2].translate(None, '@').split(" ")
         for channel in self.channelList:
             if channel in trackedchannels:
                 self.trackedpresent[channel] = True
