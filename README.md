@@ -21,7 +21,12 @@ To install a new bot, make sure you already have installed:
 * Twisted (Python library)
 
 Once that is done, create a new database and user in MySQL for gthx to use and grant the user full permissions
-on that database.
+on that database. Something like:
+
+```
+create database gthx;
+grant all on gthx.* to 'gthxuser' identified by 'password';
+```
 
 Run the gthx DB install script:
     mysql -u root -p [password] [databasename] < createDB.sql
