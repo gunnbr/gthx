@@ -83,11 +83,32 @@ class Gthx(irc.IRCClient):
         self.googleQuery = re.compile("\s*google\s+(.*?)\s+for\s+([a-zA-Z\*_\\\[\]\{\}^`|\*][a-zA-Z0-9\*_\\\[\]\{\}^`|-]*)")
         self.uptimeStart = datetime.datetime.now()
         self.lurkerReplyChannel = ""
-        self.password = os.getenv("GTHX_NICKSERV_PASSWORD")
+        if os.getenv("GTHX_NICKSERV_PASSWORD"):
+            self.log("Setting nickserv password")
+            # Just setting this variable sets the nickserv login password
+            self.password = os.getenv("GTHX_NICKSERV_PASSWORD")
 
     def connectionMade(self):
-        self.log("IRC Connection made")
+        self.log("IRC Connection made -- sending CAP REQ")
+        self.sendLine('CAP REQ :sasl')
         irc.IRCClient.connectionMade(self)
+
+    def irc_CAP(self, prefix, params):
+        self.log("Got irc_CAP")
+        if params[1] != 'ACK' or params[2].split() != ['sasl']:
+            print 'sasl not available'
+            self.quit('')
+        sasl = ('{0}\0{0}\0{1}'.format(self.nickname, self.password)).encode('base64').strip()
+        self.sendLine('AUTHENTICATE PLAIN')
+        self.sendLine('AUTHENTICATE ' + sasl)
+  
+    def irc_903(self, prefix, params):
+        self.log("Got SASL connection successul.");
+        self.sendLine('CAP END')
+  
+    def irc_904(self, prefix, params):
+        print 'sasl auth failed', params
+        self.quit('')
 
     def connectionLost(self, reason):
         irc.IRCClient.connectionLost(self, reason)
@@ -205,7 +226,7 @@ class Gthx(irc.IRCClient):
             print "Got RPL_ENDOFNAMES"
             self.msg(self.lurkerReplyChannel,"%d of the %d users in %s right now have never said anything." % (self.lurkerCount, self.channelCount, params[1]))
             self.lurkerReplyChannel = ""
-    
+
     def irc_RPL_WHOISCHANNELS(self, prefix, params):
         """This method is called when the client recieves a reply for whois.
         params[0]: requestor
