@@ -18,6 +18,7 @@ from the code, I'm far from a python expert and welcome any fixes or changes to 
 To install a new bot, make sure you already have installed:
 * MySQL (gthx was developed on version 5.5)
 * Python 2.7
+* MySQLdb (Python library)
 * Twisted (Python library)
 
 ### Create a new database
