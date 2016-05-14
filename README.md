@@ -31,17 +31,17 @@ grant all on gthx.* to 'gthxuser' identified by 'password';
 
 Run the gthx DB install script:
 ```
-mysql -u gthxuser -p [password] [database_name] < createDB.sql
+mysql -u gthxuser -p[password] [database_name] < createDB.sql
 ```
 ### Backup and restore an existing database
 One way to backup an existing gthx DB is by using mysqldump:
 ```
-mysqldump -u gthxuser -p [password] [database_name] > backup_filename.sql
+mysqldump -u gthxuser -p[password] [database_name] > backup_filename.sql
 ```
 
 This backup file can then be restored (on the same or a different machine) with:
 ```
-mysql -u root -p [root_password] [database_name] < backup_filename.sql
+mysql -u root -p[root_password] [database_name] < backup_filename.sql
 ```
 
 ## Configuring to run at system boot
