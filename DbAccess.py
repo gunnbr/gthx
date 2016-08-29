@@ -157,6 +157,12 @@ class DbAccess():
         retries = 3
         while True:
             try:
+                self.cur.execute("SELECT id FROM factoids WHERE item=%s AND locked=1 LIMIT 1", item);
+                rows = self.cur.fetchall()
+                if rows:
+                    print "Can't forget factoid %s because it's locked." % item
+                    return False
+
                 forgotten = False
                 itemsDeleted = self.cur.execute("DELETE FROM factoids WHERE item=%s", (item))
                 if itemsDeleted > 0:

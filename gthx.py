@@ -23,7 +23,7 @@ from DbAccess import Tell
 
 from Email import Email
 
-VERSION = "gthx version 0.15 2015-01-26"
+VERSION = "gthx version 0.17 2016-08-29"
 trackednick = ""
 channel = ""
 mynick = ""
