@@ -65,12 +65,12 @@ class DbAccess():
         while True:
             try:
                 nick = string.replace(nick,"*","%")
-                self.cur.execute("SELECT * FROM seen WHERE name LIKE '%s' ORDER BY timestamp DESC LIMIT 3" % nick);
+                self.cur.execute("SELECT * FROM seen WHERE name LIKE %s ORDER BY timestamp DESC LIMIT 3", (nick,));
                 rows = self.cur.fetchall()
                 return rows
             except MySQLdb.Error, e:
                 try:
-                    print "seen(): MySQL Error [%d]: %s" % (e.args[0], e.args[1])
+                    print "seen(): MySQL Error [%d] on line %d: %s" % (e.args[0], sys.exc_info()[-1].tb_lineno, e.args[1])
                 except IndexError:
                     print "seen(): MySQL Error: %s" % str(e)
                 if (e.args[0] == 2006):
@@ -85,18 +85,18 @@ class DbAccess():
         retries = 3
         while True:
             try:
-                self.cur.execute("SELECT * FROM seen WHERE name = '%s'" % nick);
+                self.cur.execute("SELECT id FROM seen WHERE name = %s", (nick,));
                 time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 if (self.cur.rowcount > 0):
                     id = self.cur.fetchone()[0]
-                    self.cur.execute("UPDATE seen SET channel=%s, timestamp=%s, message=%s where id=%s", (channel, time, message, id))
+                    self.cur.execute("UPDATE seen SET channel='%s', timestamp='%s', message='%s' where id='%s'", (channel, time, message, id))
                 else:
                     self.cur.execute("INSERT INTO seen (name,channel,timestamp,message) VALUES (%s,%s,%s,%s)", (nick, channel, time, message));
                 self.db.commit()
                 return
             except MySQLdb.Error, e:
                 try:
-                    print "updateSeen(): MySQL Error [%d]: %s" % (e.args[0], e.args[1])
+                    print "updateSeen(): MySQL Error [%d] on line %d: %s" % (e.args[0], sys.exc_info()[-1].tb_lineno, e.args[1])
                 except IndexError:
                     print "updateSeen(): MySQL Error: %s" % str(e)
 
@@ -120,7 +120,7 @@ class DbAccess():
         retries = 3
         while True:
             try:
-                self.cur.execute("SELECT id FROM factoids WHERE item=%s AND locked=1 LIMIT 1", item);
+                self.cur.execute("SELECT id FROM factoids WHERE item=%s AND locked=1 LIMIT 1", (item,));
                 rows = self.cur.fetchall()
                 if rows:
                     print "Can't set factoid %s because it's locked." % item
@@ -157,14 +157,14 @@ class DbAccess():
         retries = 3
         while True:
             try:
-                self.cur.execute("SELECT id FROM factoids WHERE item=%s AND locked=1 LIMIT 1", item);
+                self.cur.execute("SELECT id FROM factoids WHERE item=%s AND locked=1 LIMIT 1", (item,));
                 rows = self.cur.fetchall()
                 if rows:
                     print "Can't forget factoid %s because it's locked." % item
                     return False
 
                 forgotten = False
-                itemsDeleted = self.cur.execute("DELETE FROM factoids WHERE item=%s", (item))
+                itemsDeleted = self.cur.execute("DELETE FROM factoids WHERE item=%s", (item,))
                 if itemsDeleted > 0:
                     forgotten = True
                     time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -195,7 +195,7 @@ class DbAccess():
         retries = 3
         while True:
             try:
-                self.cur.execute("SELECT * FROM factoids WHERE item=%s ORDER BY dateset", item);
+                self.cur.execute("SELECT * FROM factoids WHERE item=%s ORDER BY dateset", (item,));
                 rows = self.cur.fetchall()
                 return rows
             except MySQLdb.Error, e:
@@ -215,7 +215,7 @@ class DbAccess():
         retries = 3
         while True:
             try:
-                self.cur.execute("SELECT * FROM factoid_history WHERE item=%s ORDER BY dateset DESC LIMIT 4", item);
+                self.cur.execute("SELECT * FROM factoid_history WHERE item=%s ORDER BY dateset DESC LIMIT 4", (item,));
                 rows = self.cur.fetchall()
                 return rows
             except MySQLdb.Error, e:
@@ -263,10 +263,10 @@ class DbAccess():
         retries = 3
         while True:
             try:
-                self.cur.execute("SELECT * FROM tell WHERE recipient=%s ORDER BY timestamp", recipient);
+                self.cur.execute("SELECT * FROM tell WHERE recipient=%s ORDER BY timestamp", (recipient,));
                 rows = self.cur.fetchall()
                 if rows:
-                    self.cur.execute("DELETE FROM tell WHERE recipient=%s", recipient);
+                    self.cur.execute("DELETE FROM tell WHERE recipient=%s", (recipient,));
                     self.db.commit()
                 return rows
             except MySQLdb.Error, e:
