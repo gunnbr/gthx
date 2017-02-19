@@ -89,8 +89,11 @@ class Gthx(irc.IRCClient):
             self.password = os.getenv("GTHX_NICKSERV_PASSWORD")
 
     def connectionMade(self):
-        self.log("IRC Connection made -- sending CAP REQ")
-        self.sendLine('CAP REQ :sasl')
+        if (self.password == None):
+            self.log("IRC Connection made - no nickserv password")
+        else:
+            self.log("IRC Connection made -- sending CAP REQ")
+            self.sendLine('CAP REQ :sasl')
         irc.IRCClient.connectionMade(self)
 
     def irc_CAP(self, prefix, params):
@@ -141,7 +144,6 @@ class Gthx(irc.IRCClient):
         else:
             self.matchNick = "(%s)(:|;|,|-|\s)+(.+)" % (self.nickname)
             print "Running in standalone mode."
-            message += "Running in standalone mode."
 
     def joined(self, channel):
         """Called when the bot joins the channel."""

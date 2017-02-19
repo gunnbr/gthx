@@ -1,4 +1,4 @@
-# Don't check in the local version of the upstart file.
+# Don't check in the local version of the startup files
 *.local
 
 # Ignore emacs auto-saves
