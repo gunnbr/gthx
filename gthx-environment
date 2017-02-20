@@ -1,0 +1,14 @@
+GTHX_NICK=<bot nick>
+GTHX_CHANNELS=#<channel1>,#<channel2>
+GTHX_NICKSERV_PASSWORD=<password for nickserver>
+GTHX_TRACKED_NICK=<bot being tracked nick>
+
+GTHX_MYSQL_USER=<MySQL username>
+GTHX_MYSQL_PASSWORD=<MySQL password>
+GTHX_MYSQL_DATABASE=<MySQL database name>
+
+GTHX_EMAIL_USER=<email user>
+GTHX_EMAIL_PASSWORD=<email password>
+GTHX_EMAIL_SMTP_SERVER=<SMTP server>:<SMTP port>
+GTHX_EMAIL_FROM=<address email appears from>
+GTHX_EMAIL_TO=<address email gets delivered to>
