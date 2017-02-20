@@ -47,11 +47,25 @@ mysql -u root -p[root_password] [database_name] < backup_filename.sql
 
 ## Configuring to run at system boot
 
+### systemd (Ubuntu 16.04 and beyond)
+Copy the environment variable script 'gthx-environment' to 'gthx-environment.local'
+
+Edit 'gthx-environment.local' to configure everything.
+
+Run 'install.sh' to copy gthx to /usr/sbin/gthx and the environment variables to /etc/default/gthx.
+This also uses systemctl to stop the service if it's running and reload all information, then restart
+the service.
+
+gthx is now configured to run at startup.
+
+### Upstart (Ubuntu 14.04 and below)
 Copy the upstart script `gthx-upstart` to `gthx-upstart.local`.
 
 Edit `gthx-upstart.local` to configure everything.
 
-Run `install.sh` to copy the gthx to /usr/sbin/gthx and the upstart script to /etc/init.
+~~Run `install.sh` to copy the gthx to /usr/sbin/gthx and the upstart script to /etc/init.~~
+**install.sh has been modified to only work with systemd at the moment. To use upstart, please use an
+older version of install.sh. I'll restore this file to install-upstart.sh at some point in the future.**
 
 Run `sudo service gthx start` to start gthx. (The upstart script can, of course, be changed to match the name of your bot.)
 
