@@ -13,23 +13,24 @@ from twisted.internet import reactor, protocol, error
 from twisted.python import log
 
 # system imports
-import time, sys, datetime, re, os
+import time, sys, re, os
 import traceback
 import urllib
 
+from datetime import datetime
 from DbAccess import DbAccess
 from DbAccess import Seen
 from DbAccess import Tell
 
 from Email import Email
 
-VERSION = "gthx version 0.17 2016-08-29"
+VERSION = "gthx version 0.18 2017-02-19"
 trackednick = ""
 channel = ""
 mynick = ""
 
 def timesincestring(firsttime):
-        since = datetime.datetime.now() - firsttime
+        since = datetime.now() - firsttime
         years = since.days / 365
         days = since.days % 365
         minutes = since.seconds / 60
@@ -61,9 +62,9 @@ def timesincestring(firsttime):
                 sincestring += "s"
             if seconds > 0:
                 sincestring += ", "
-        if seconds > 0:
+        if seconds > 0 or not sincestring:
             sincestring += "%s second" % seconds
-            if seconds > 1:
+            if seconds is not 1:
                 sincestring += "s"
         return sincestring
 
@@ -81,7 +82,7 @@ class Gthx(irc.IRCClient):
         self.factoidQuery = re.compile("(.+)[?!](\s*$|\s*\|\s*([a-zA-Z\*_\\\[\]\{\}^`|\*][a-zA-Z0-9\*_\\\[\]\{\}^`|-]*)$)")
         self.factoidSet = re.compile("(.+?)\s(is|are)(\salso)?\s(.+)")
         self.googleQuery = re.compile("\s*google\s+(.*?)\s+for\s+([a-zA-Z\*_\\\[\]\{\}^`|\*][a-zA-Z0-9\*_\\\[\]\{\}^`|-]*)")
-        self.uptimeStart = datetime.datetime.now()
+        self.uptimeStart = datetime.now()
         self.lurkerReplyChannel = ""
         if os.getenv("GTHX_NICKSERV_PASSWORD"):
             self.log("Setting nickserv password")

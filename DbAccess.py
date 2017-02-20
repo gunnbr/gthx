@@ -89,7 +89,7 @@ class DbAccess():
                 time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 if (self.cur.rowcount > 0):
                     id = self.cur.fetchone()[0]
-                    self.cur.execute("UPDATE seen SET channel='%s', timestamp='%s', message='%s' where id='%s'", (channel, time, message, id))
+                    self.cur.execute("UPDATE seen SET channel=%s, timestamp=%s, message=%s where id=%s", (channel, time, message, id))
                 else:
                     self.cur.execute("INSERT INTO seen (name,channel,timestamp,message) VALUES (%s,%s,%s,%s)", (nick, channel, time, message));
                 self.db.commit()
