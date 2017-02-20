@@ -45,3 +45,9 @@ CREATE TABLE `version` (
 
 INSERT INTO version (version, timestamp) VALUES (1, CURRENT_TIMESTAMP);
 
+CREATE TABLE `refs` (
+  `id` int(11) NOT NULL,
+  `count` int(11) NOT NULL,
+  `lastreferenced` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+);

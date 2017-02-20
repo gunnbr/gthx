@@ -197,6 +197,10 @@ class DbAccess():
             try:
                 self.cur.execute("SELECT * FROM factoids WHERE item=%s ORDER BY dateset", (item,));
                 rows = self.cur.fetchall()
+                if rows:
+                    key = int(rows[0][0])
+                    self.cur.execute("INSERT INTO refs (id, count, lastreferenced) VALUES(%s, 1, NOW()) ON DUPLICATE KEY UPDATE count=count+1", (key,));
+                    self.db.commit();
                 return rows
             except MySQLdb.Error, e:
                 try:
