@@ -43,7 +43,7 @@ CREATE TABLE `version` (
   `timestamp` datetime DEFAULT NULL
 );
 
-INSERT INTO version (version, timestamp) VALUES (1, CURRENT_TIMESTAMP);
+INSERT INTO version (version, timestamp) VALUES (2, CURRENT_TIMESTAMP);
 
 CREATE TABLE `refs` (
   `id` int(11) NOT NULL,
