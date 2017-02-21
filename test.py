@@ -38,7 +38,7 @@ class DbAccessTest(unittest.TestCase):
         self.assertEqual(row[Seen.name], user, "Wrong username returned for seen user")
         self.assertEqual(row[Seen.channel], channel, "Wrong channel returned for a seen user")
         #delta = 
-        #self.assertEqual(row[Seen.timestamp] )
+        #self.assertEqual(row[Seen.timestamp], ???, "Wrong time returned for a seen user")
         self.assertEqual(row[Seen.message], message, "Wrong message returned for a seen user"))
         
         # TODO: Make way to remove a user from the seen table
