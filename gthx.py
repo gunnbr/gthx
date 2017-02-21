@@ -74,7 +74,20 @@ class Gthx(irc.IRCClient):
     restring = ""
 
     def __init__(self):
-        self.db = DbAccess()
+        dbuser = os.getenv("GTHX_MYSQL_USER")
+        if not dbuser:
+            raise ValueError("No username specified. Have you set GTHX_MYSQL_USER?")
+
+        dbpassword = os.getenv("GTHX_MYSQL_PASSWORD")
+        if not dbpassword:
+            raise ValueError("No password specified. Have you set GTHX_MYSQL_PASSWORD?")
+
+        dbname = os.getenv("GTHX_MYSQL_DATABASE")
+        if not dbname:
+            raise ValueError("No database specified. Have you set GTHX_MYSQL_DATABASE?")
+
+        self.db = DbAccess(dbuser, dbpassword, dbname)
+
         self.trackedpresent = dict()
         self.gotwhoischannel = False
         self.seenQuery = re.compile("\s*seen\s+([a-zA-Z\*_\\\[\]\{\}^`|\*][a-zA-Z0-9\*_\\\[\]\{\}^`|-]*)[\s\?]*")

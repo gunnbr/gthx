@@ -24,18 +24,10 @@ class DbAccess():
     Gives access to read and write all the tables in the database
     """
 
-    def __init__(self):
-        self.dbuser = os.getenv("GTHX_MYSQL_USER")
-        if (self.dbuser == None):
-            raise ValueError("No username specified. Have you set GTHX_MYSQL_USER?")
-
-        self.dbpassword = os.getenv("GTHX_MYSQL_PASSWORD")
-        if (self.dbpassword == None):
-            raise ValueError("No password specified. Have you set GTHX_MYSQL_PASSWORD?")
-
-        self.database = os.getenv("GTHX_MYSQL_DATABASE")
-        if (self.database == None):
-            raise ValueError("No database specified. Have you set GTHX_MYSQL_DATABASE?")
+    def __init__(self, user, password, dbname):
+        self.dbuser = user
+        self.dbpassword = password
+        self.dbname = dbname
 
         self.reconnect()
 
@@ -43,7 +35,7 @@ class DbAccess():
         retries = 5
         while True:
             try:
-                self.db = MySQLdb.connect(host='localhost', user=self.dbuser, passwd=self.dbpassword, db=self.database)
+                self.db = MySQLdb.connect(host='localhost', user=self.dbuser, passwd=self.dbpassword, db=self.dbname)
                 self.cur = self.db.cursor()
                 print "Connected to MySQL server"
                 return
