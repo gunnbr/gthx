@@ -71,8 +71,8 @@ Run `sudo service gthx start` to start gthx. (The upstart script can, of course,
 
 ## Running the unit tests
 To run the unit tests:
-# Create a fresh DB and possibly user
-# Put the user and DB information in `gthx-environment.local` (or another copy of that file)
-# Run `env $(cat gthx-environment.local | xargs) python test.py`
+* Create a fresh DB and possibly user
+* Put the user and DB information in `gthx-environment.local` (or another copy of that file)
+* Run `env $(cat gthx-environment.local | xargs) python test.py`
 
 
