@@ -88,6 +88,8 @@ class Gthx(irc.IRCClient):
 
         self.db = DbAccess(dbuser, dbpassword, dbname)
 
+        print "Connected to MySQL server"
+        
         self.trackedpresent = dict()
         self.gotwhoischannel = False
         self.seenQuery = re.compile("\s*seen\s+([a-zA-Z\*_\\\[\]\{\}^`|\*][a-zA-Z0-9\*_\\\[\]\{\}^`|-]*)[\s\?]*")

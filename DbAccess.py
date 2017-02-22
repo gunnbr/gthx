@@ -37,7 +37,6 @@ class DbAccess():
             try:
                 self.db = MySQLdb.connect(host='localhost', user=self.dbuser, passwd=self.dbpassword, db=self.dbname)
                 self.cur = self.db.cursor()
-                print "Connected to MySQL server"
                 return
             except MySQLdb.Error, e:
                 try:
@@ -288,4 +287,30 @@ class DbAccess():
         self.cur.close()
         self.db.close()
         
-    
+    # Test only methods    
+    def deleteSeen(self, user):
+        retries = 3
+        while True:
+            try:
+                itemsDeleted = self.cur.execute("DELETE FROM seen WHERE name=%s", (user,))
+                self.db.commit()
+                return itemsDeleted > 0
+            except MySQLdb.Error, e:
+                try:
+                    print "forgetFactoid(): MySQL Error [%d]: %s" % (e.args[0], e.args[1])
+                except IndexError:
+                    print "forgetFactoid(): MySQL Error: %s" % str(e)
+                if (e.args[0] == 2006):
+                    self.reconnect()
+                else:
+                    try:
+                        print "Rolling back..."
+                        self.db.rollback()
+                    except MySQLdb.Error:
+                        print "Rollback failed."
+                    
+                retries = retries - 1
+                if (retries > 0):
+                    print "Retrying..."
+                else:
+                    return None
