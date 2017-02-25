@@ -341,20 +341,124 @@ class DbAccessTellTest(unittest.TestCase):
 
         self.db = DbAccess(dbuser, dbpassword, dbname)
 
-    # Test:
-    # Get tells for a user that doesn't have any waiting
-    # Adding a tell
-    # Get tells for a user that has some waiting
-    # Get tells for the same user again to verify they're gone
-    # Add tell to user with unicode in their name
-    # Add tell with unicode in the message
-    
+    def test_user_with_no_tells(self):
+        user="someuser"
+
+        data = self.db.getTell(user)
+        self.assertEquals(len(data), 0, "Wrong number of tells returned for a user who doesn't have any waiting")
+        
     def test_get_with_no_tells(self):
         data = self.db.getTell(DbAccessTellTest.missinguser)
         self.assertFalse(data, "Got a valid return for a user with no tells waiting")
         
-#    def tearDown(self):
-        # TODO: Delete all tells
+    def test_add_and_get_and_verify_tell(self):
+        teller = "talker"
+        receiver = "randomuser"
+        message = "Ping me when you can"
+        kthxKnows = False
+        
+        success = self.db.addTell(teller, receiver, message, kthxKnows)
+        self.assertTrue(success, "Failed to add a tell to a user");
+        
+        data = self.db.getTell(receiver)
+        self.assertTrue(data, "Got no tells for a user with tells waiting")
+        self.assertEquals(len(data), 1, "Got wrong number of tells for a user")
+        
+        tell = data[0]
+        self.assertEquals(tell[1], teller, "Got wrong author for a tell")
+        self.assertEquals(tell[2], receiver, "Got wrong recipient for a tell")
+        self.assertEquals(tell[4], message, "Got wrong message for a tell")
+        self.assertEquals(tell[5], kthxKnows, "Got wrong inTracked for a tell")
+
+        delta = datetime.now() - tell[3]
+        self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a tell date set: delta is %d" % delta.total_seconds())
+
+        # Now get again for the same user to make sure they've been cleared
+        data = self.db.getTell(receiver)
+        self.assertFalse(data, "Got tells for a user with none waiting")
+        
+    def test_add_and_get_and_verify_unicode_tell(self):
+        teller = "😇talker"
+        receiver = "random🚕user"
+        message = "☎️ me when you can"
+        kthxKnows = True
+        
+        success = self.db.addTell(teller, receiver, message, kthxKnows)
+        self.assertTrue(success, "Failed to add a tell to a user");
+        
+        data = self.db.getTell(receiver)
+        self.assertTrue(data, "Got no tells for a user with tells waiting")
+        self.assertEquals(len(data), 1, "Got wrong number of tells for a user")
+        
+        tell = data[0]
+        self.assertEquals(tell[1], teller, "Got wrong author for a tell")
+        self.assertEquals(tell[2], receiver, "Got wrong recipient for a tell")
+        self.assertEquals(tell[4], message, "Got wrong message for a tell")
+        self.assertEquals(tell[5], kthxKnows, "Got wrong inTracked for a tell")
+
+        delta = datetime.now() - tell[3]
+        self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a tell date set: delta is %d" % delta.total_seconds())
+
+        # Now get again for the same user to make sure they've been cleared
+        data = self.db.getTell(receiver)
+        self.assertFalse(data, "Got tells for a user with none waiting")
+        
+    def test_multiple_tells(self):
+        teller = "talker"
+        teller2 = "another_talker"
+        teller3 = "schminkebob"
+        receiver = "randomuser"
+        message = "Ping me when you can"
+        message2 = "Can you give me a ring please?"
+        message3 = "WAKE UP!!"
+        kthxKnows = False
+        kthxKnows2 = True
+        kthxKnows3 = False
+        
+        success = self.db.addTell(teller, receiver, message, kthxKnows)
+        self.assertTrue(success, "Failed to add a tell to a user");
+        success = self.db.addTell(teller2, receiver, message2, kthxKnows2)
+        self.assertTrue(success, "Failed to add a second tell to a user");
+        success = self.db.addTell(teller3, receiver, message3, kthxKnows3)
+        self.assertTrue(success, "Failed to add a third tell to a user");
+        
+        data = self.db.getTell(receiver)
+        self.assertTrue(data, "Got no tells for a user with tells waiting")
+        self.assertEquals(len(data), 3, "Got wrong number of tells for a user")
+        
+        tell = data[0]
+        self.assertEquals(tell[1], teller, "Got wrong author for a tell")
+        self.assertEquals(tell[2], receiver, "Got wrong recipient for a tell")
+        self.assertEquals(tell[4], message, "Got wrong message for a tell")
+        self.assertEquals(tell[5], kthxKnows, "Got wrong inTracked for a tell")
+
+        delta = datetime.now() - tell[3]
+        self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a tell date set: delta is %d" % delta.total_seconds())
+
+        tell = data[1]
+        self.assertEquals(tell[1], teller2, "Got wrong author for a tell")
+        self.assertEquals(tell[2], receiver, "Got wrong recipient for a tell")
+        self.assertEquals(tell[4], message2, "Got wrong message for a tell")
+        self.assertEquals(tell[5], kthxKnows2, "Got wrong inTracked for a tell")
+
+        delta = datetime.now() - tell[3]
+        self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a tell date set: delta is %d" % delta.total_seconds())
+
+        tell = data[2]
+        self.assertEquals(tell[1], teller3, "Got wrong author for a tell")
+        self.assertEquals(tell[2], receiver, "Got wrong recipient for a tell")
+        self.assertEquals(tell[4], message3, "Got wrong message for a tell")
+        self.assertEquals(tell[5], kthxKnows3, "Got wrong inTracked for a tell")
+
+        delta = datetime.now() - tell[3]
+        self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a tell date set: delta is %d" % delta.total_seconds())
+
+        # Now get again for the same user to make sure they've been cleared
+        data = self.db.getTell(receiver)
+        self.assertFalse(data, "Got tells for a user with none waiting")
+    
+    def tearDown(self):
+        self.db.deleteAllTells()
     
         
 if __name__ == '__main__':

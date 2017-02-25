@@ -372,3 +372,30 @@ class DbAccess():
                     print "Retrying..."
                 else:
                     return
+
+    def deleteAllTells(self):
+        retries = 3
+        while True:
+            try:
+                itemsDeleted = self.cur.execute("DELETE FROM tell")
+                self.db.commit()
+                return
+            except MySQLdb.Error, e:
+                try:
+                    print "deleteAllFactoids(): MySQL Error [%d]: %s" % (e.args[0], e.args[1])
+                except IndexError:
+                    print "deleteAllFactoids(): MySQL Error: %s" % str(e)
+                if (e.args[0] == 2006):
+                    self.reconnect()
+                else:
+                    try:
+                        print "Rolling back..."
+                        self.db.rollback()
+                    except MySQLdb.Error:
+                        print "Rollback failed."
+                    
+                retries = retries - 1
+                if (retries > 0):
+                    print "Retrying..."
+                else:
+                    return None
