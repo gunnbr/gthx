@@ -297,9 +297,9 @@ class DbAccess():
                 return itemsDeleted > 0
             except MySQLdb.Error, e:
                 try:
-                    print "forgetFactoid(): MySQL Error [%d]: %s" % (e.args[0], e.args[1])
+                    print "deleteSeen(): MySQL Error [%d]: %s" % (e.args[0], e.args[1])
                 except IndexError:
-                    print "forgetFactoid(): MySQL Error: %s" % str(e)
+                    print "deleteSeen(): MySQL Error: %s" % str(e)
                 if (e.args[0] == 2006):
                     self.reconnect()
                 else:
@@ -314,3 +314,61 @@ class DbAccess():
                     print "Retrying..."
                 else:
                     return None
+
+    def deleteAllFactoids(self):
+        retries = 3
+        while True:
+            try:
+                itemsDeleted = self.cur.execute("DELETE FROM factoids")
+                self.db.commit()
+                itemsDeleted = self.cur.execute("DELETE FROM factoid_history")
+                self.db.commit()
+                return
+            except MySQLdb.Error, e:
+                try:
+                    print "deleteAllFactoids(): MySQL Error [%d]: %s" % (e.args[0], e.args[1])
+                except IndexError:
+                    print "deleteAllFactoids(): MySQL Error: %s" % str(e)
+                if (e.args[0] == 2006):
+                    self.reconnect()
+                else:
+                    try:
+                        print "Rolling back..."
+                        self.db.rollback()
+                    except MySQLdb.Error:
+                        print "Rollback failed."
+                    
+                retries = retries - 1
+                if (retries > 0):
+                    print "Retrying..."
+                else:
+                    return None
+                
+    def lockFactoid(self, factoid):
+        retries = 3
+        while True:
+            try:
+                self.cur.execute("UPDATE factoids SET locked=1 where item=%s", (factoid,))
+                self.db.commit()
+                return
+            except MySQLdb.Error, e:
+                try:
+                    print "lockFactoid(): MySQL Error [%d] on line %d: %s" % (e.args[0], sys.exc_info()[-1].tb_lineno, e.args[1])
+                except IndexError:
+                    print "lockFactoid(): MySQL Error: %s" % str(e)
+
+                if (e.args[0] == 2006):
+                    print "Reconnecting..."
+                    self.reconnect()
+                else:
+                    try:
+                        print "Rolling back..."
+                        self.db.rollback()
+                    except MySQLdb.Error:
+                        print "Rollback failed."
+
+                retries = retries - 1
+                if (retries > 0):
+                    print "Retrying..."
+                else:
+                    return

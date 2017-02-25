@@ -13,6 +13,7 @@ class DbAccessSeenTest(unittest.TestCase):
     seenuser = "seenuser"
     seenuser2 = "seenuser2"
     unicodeuser = "🐰Lover"
+    unicodemessage = "I love 🌮s"
     
     def setUp(self):
         dbuser = os.getenv("GTHX_MYSQL_USER")
@@ -91,9 +92,26 @@ class DbAccessSeenTest(unittest.TestCase):
         delta = datetime.now() - data[Seen.timestamp]
         self.assertLess(delta.total_seconds(), 2, 'Wrong time returned for a seen user: delta is %d' % delta.total_seconds())
 
-    # Test:
-    # Add seen for user with unicode in the name
-    # Add seen with message that has unicode in the name
+    def test_unicode_seen(self):
+        user = DbAccessSeenTest.unicodeuser
+        channel = "#test_channel"
+        message = DbAccessSeenTest.unicodemessage
+
+        self.db.updateSeen(user, channel, message)
+
+        rows = self.db.seen(user)
+        self.assertEqual(len(rows), 1, "Returned incorrect data for a unicode user that has been seen")
+
+        data=rows[0]
+        
+        self.assertEqual(data[Seen.name], user, "Wrong username returned for a unicode seen user")
+        self.assertEqual(data[Seen.channel], channel, "Wrong channel returned for a unicode seen user")
+
+        delta = datetime.now() - data[Seen.timestamp]
+        self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a unicode seen user: delta is %d" % delta.total_seconds())
+        self.assertEqual(data[Seen.message], message, "Wrong message returned for a unicode seen message")
+        
+        self.db.deleteSeen(user)
     
     def tearDown(self):
         self.db.deleteSeen(DbAccessSeenTest.missinguser)
@@ -119,30 +137,190 @@ class DbAccessFactoidTest(unittest.TestCase):
 
         self.db = DbAccess(dbuser, dbpassword, dbname)
 
+    def test_get_missing_factoid(self):
+        data = self.db.getFactoid(DbAccessFactoidTest.missingFactoid)
+        self.assertFalse(data, "Got a valid return from a factoid that shouldn't exist")
+
+    def test_add_factoid(self):
+        user="someuser"
+        item="somefactoid"
+        isAre=False
+        definition="a good thing to talk about"
+        overwrite=False
+        
+        success = self.db.addFactoid(user, item, isAre, definition, overwrite)
+
+        self.assertTrue(success, "Failed to add a new factoid")
+        
+        data = self.db.getFactoid(item)
+        self.assertEqual(len(data), 1, "Returned wrong number of results for a factoid: %d" % (len(data),) )
+
+        factoid=data[0]
+        
+        # TODO: I really need to make this data access more intuitive to use
+        self.assertEquals(factoid[1], item, "Factoid failed to retrieve the item field correctly")
+        self.assertEquals(factoid[2], isAre, "Factoid failed to retrieve the is/are field correctly")
+        self.assertEquals(factoid[3], definition, "Factoid failed to retrieve the defintion correctly")
+        self.assertEquals(factoid[4], user, "Factoid failed to retrieve the user correctly")
+
+        delta = datetime.now() - factoid[5]
+        self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a factoid date set: delta is %d" % delta.total_seconds())
+
+        self.assertFalse(factoid[6], "Factoid failed to retrieve the locked flag correctly")
+
+    def test_add_unicode_factoid(self):
+        user="some😀user"
+        item="some🐶factoid"
+        isAre=False
+        definition="a good thing to eat 🍕🌮🍜🎂🍧"
+        overwrite=False
+        
+        success = self.db.addFactoid(user, item, isAre, definition, overwrite)
+
+        self.assertTrue(success, "Failed to add a new factoid")
+        
+        data = self.db.getFactoid(item)
+        self.assertEqual(len(data), 1, "Returned wrong number of results for a factoid: %d" % (len(data),) )
+
+        factoid=data[0]
+        
+        self.assertEquals(factoid[1], item, "Factoid failed to retrieve the item field correctly")
+        self.assertEquals(factoid[2], isAre, "Factoid failed to retrieve the is/are field correctly")
+        self.assertEquals(factoid[3], definition, "Factoid failed to retrieve the defintion correctly")
+        self.assertEquals(factoid[4], user, "Factoid failed to retrieve the user correctly")
+
+        delta = datetime.now() - factoid[5]
+        self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a factoid date set: delta is %d" % delta.total_seconds())
+
+        self.assertFalse(factoid[6], "Factoid failed to retrieve the locked flag correctly")
+
+    def test_add_to_factoid_then_replace(self):
+        user="someuser"
+        user2="someotheruser"
+        user3="someguy"
+        item="somefactoid"
+        isAre=True
+        definition="a good thing to talk about"
+        definition2="something people write"
+        replacement="stupid facts"
+        
+        success = self.db.addFactoid(user, item, isAre, definition, False)
+        self.assertTrue(success, "Failed to add a new factoid")
+
+        success = self.db.addFactoid(user2, item, isAre, definition2, False)
+        self.assertTrue(success, "Failed to add a new factoid")
+        
+        data = self.db.getFactoid(item)
+        self.assertEqual(len(data), 2, "Returned wrong number of results for a multi-factoid: %d" % (len(data),) )
+
+        factoid=data[0]
+        
+        self.assertEquals(factoid[1], item, "Factoid failed to retrieve the item field correctly")
+        self.assertEquals(factoid[2], isAre, "Factoid failed to retrieve the is/are field correctly")
+        self.assertEquals(factoid[3], definition, "Factoid failed to retrieve the defintion correctly")
+        self.assertEquals(factoid[4], user, "Factoid failed to retrieve the user correctly")
+
+        delta = datetime.now() - factoid[5]
+        self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a factoid date set: delta is %d" % delta.total_seconds())
+
+        self.assertFalse(factoid[6], "Factoid failed to retrieve the locked flag correctly")
+
+        factoid=data[1]
+        
+        self.assertEquals(factoid[1], item, "Factoid failed to retrieve the item field correctly")
+        self.assertEquals(factoid[2], isAre, "Factoid failed to retrieve the is/are field correctly")
+        self.assertEquals(factoid[3], definition2, "Factoid failed to retrieve the defintion correctly")
+        self.assertEquals(factoid[4], user2, "Factoid failed to retrieve the user correctly")
+
+        delta = datetime.now() - factoid[5]
+        self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a factoid date set: delta is %d" % delta.total_seconds())
+
+        self.assertFalse(factoid[6], "Factoid failed to retrieve the locked flag correctly")
+
+        # Now overwrite these definitions with a totally new one
+        success = self.db.addFactoid(user3, item, isAre, replacement, True)
+        self.assertTrue(success, "Failed to replace a new factoid")
+        
+        data = self.db.getFactoid(item)
+        self.assertEqual(len(data), 1, "Returned wrong number of results for a replacedfactoid: %d" % (len(data),) )
+
+        factoid=data[0]
+        
+        self.assertEquals(factoid[1], item, "Factoid failed to retrieve the item field correctly")
+        self.assertEquals(factoid[2], isAre, "Factoid failed to retrieve the is/are field correctly")
+        self.assertEquals(factoid[3], replacement, "Factoid failed to retrieve the defintion correctly")
+        self.assertEquals(factoid[4], user3, "Factoid failed to retrieve the user correctly")
+
+        delta = datetime.now() - factoid[5]
+        self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a factoid date set: delta is %d" % delta.total_seconds())
+
+        self.assertFalse(factoid[6], "Factoid failed to retrieve the locked flag correctly")
+        
+    def test_forget_factoid(self):
+        user="someuser"
+        user2="someotheruser"
+        user3="someguy"
+        item="somefactoid"
+        isAre=True
+        definition="a good thing to talk about"
+        definition2="something people write"
+        
+        success = self.db.addFactoid(user, item, isAre, definition, False)
+        self.assertTrue(success, "Failed to add a new factoid")
+
+        success = self.db.addFactoid(user2, item, isAre, definition2, False)
+        self.assertTrue(success, "Failed to add a new factoid")
+
+        wasDeleted = self.db.forgetFactoid(item, user3)
+        self.assertTrue(wasDeleted, "Incorect return value from forgetFactoid")
+
+        data = self.db.getFactoid(item)
+        self.assertEqual(len(data), 0, "Returned wrong number of results for a forgotten factoid: %d" % (len(data),) )
+
+    def test_forget_factoid_that_doesnt_exist(self):
+        user="someuser"
+        item="somefactoid"
+        
+        wasDeleted = self.db.forgetFactoid(item, user)
+        self.assertFalse(wasDeleted, "Incorrect return value from forgetFactoid")
+
+
+    def test_lock_and_replace_or_forget_factoid(self):
+        user="someuser"
+        item="lockedfactoid"
+        isAre=True
+        definition="a good thing to talk about"
+        overwrite=False
+        
+        success = self.db.addFactoid(user, item, isAre, definition, False)
+        self.assertTrue(success, "Failed to add a new factoid")
+
+        self.db.lockFactoid(item)
+        
+        data = self.db.getFactoid(item)
+        self.assertEqual(len(data), 1, "Returned wrong number of results for a factoid: %d" % (len(data),) )
+
+        factoid=data[0]
+        
+        self.assertTrue(factoid[6], "Factoid does not appear to be locked when it should be")
+
+        wasDeleted = self.db.forgetFactoid(item, user)
+        self.assertFalse(wasDeleted, "Was incorrrectly able to delete a locked factoid")
+        
+        success = self.db.addFactoid(user, item, isAre, definition, True)
+        self.assertFalse(success, "Was incorrectly able to replace a locked factoid")
+        
     # Test:
-    # Fetch of factoid that doesn't exist
-    # Add new factoid
-    # Add and retrieve factoid with unicode factoid
-    # Add and retrieve factoid with unicode definition
-    # Replace existing factoid
-    # Add to existing factoid
-    # Replace existing factoid with multiple parts
-    # Forget factoid
-    # Forget factoid with multiple parts
-    # Forget locked factoid
     # Factoid history for:
     #   Adding new
     #   Add additional
     #   Forget single factoid
     #   Forget multiple part factoid
 
-    def test_get_missing_factoid(self):
-        data = self.db.getFactoid(DbAccessFactoidTest.missingFactoid)
-        self.assertFalse(data, "Got a valid return from a factoid that shouldn't exist")
-
-#    def tearDown(self):
-        # TODO: Clear all factoids
-        # TODO: Clear factoid history
+    def tearDown(self):
+        # Clear all factoids and history
+        self.db.deleteAllFactoids()
+        #print "Skipping factoid teardown"
 
 
 class DbAccessTellTest(unittest.TestCase):
