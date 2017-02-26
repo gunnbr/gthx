@@ -92,6 +92,45 @@ class DbAccessSeenTest(unittest.TestCase):
         delta = datetime.now() - data[Seen.timestamp]
         self.assertLess(delta.total_seconds(), 2, 'Wrong time returned for a seen user: delta is %d' % delta.total_seconds())
 
+    def test_update_of_seen_with_nick_including_backslashes(self):
+        # These were found to cause problems in the real system
+        user = "k\\o\\w"
+        channel = "#test_channel"
+        message = "Running unit tests..."
+
+        self.db.updateSeen(user, channel, message)
+
+        # First test the normal case
+        rows = self.db.seen(user)
+        self.assertEqual(len(rows), 1, "Returned incorrect data for a user that has been seen: %d" % len(rows))
+
+        # Now update seen a few more times
+        self.db.updateSeen(user, channel, message)
+        self.db.updateSeen(user, channel, message)
+        self.db.updateSeen(user, channel, message)
+        self.db.updateSeen(user, channel, message)
+        self.db.updateSeen(user, channel, message)
+        
+        rows = self.db.seen(user)
+        self.assertEqual(len(rows), 1, "Returned incorrect data for a user that has been seen")
+
+
+    def test_sql_injection_through_seen(self):
+        # SELECT * FROM seen WHERE name LIKE
+        # blah; DROP TABLE SEEN; SELECT * FROM SEEN WHERE name LIKE blah
+        # ORDER BY timestamp DESC LIMIT 3
+        # These were found to cause problems in the real system
+        #user = "blah; DROP TABLE SEEN; SELECT * FROM SEEN WHERE name LIKE blah"
+        user = "blah; DROP TABLE SEEN;"
+        channel = "#test_channel"
+        message = "Running unit tests..."
+
+        self.db.updateSeen(user, channel, message)
+
+        # First test the normal case
+        rows = self.db.seen(user)
+        self.assertEqual(len(rows), 1, "Returned incorrect data for a user that has been seen: %d" % len(rows))
+        
     def test_unicode_seen(self):
         user = DbAccessSeenTest.unicodeuser
         channel = "#test_channel"
