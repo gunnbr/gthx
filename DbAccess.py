@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import time, sys, os, datetime, string
+import time, sys, os, string
 import MySQLdb
 
 class Seen:
@@ -104,7 +104,7 @@ class DbAccess():
         
     def seen(self, nick):
         nick = string.replace(nick,"*","%")
-        return self.executeAndFetchAll("SELECT * FROM seen WHERE name LIKE %s ORDER BY timestamp DESC LIMIT 3", nick)
+        return self.executeAndFetchAll("SELECT * FROM seen WHERE name LIKE %s ORDER BY timestamp DESC LIMIT 3", MySQLdb.escape_string(nick))
 
     def updateSeen(self, nick, channel, message):
         rows = self.executeAndFetchAll("SELECT id FROM seen WHERE name = %s", nick)
