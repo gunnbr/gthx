@@ -51,122 +51,18 @@ class DbAccess():
                     print "MySQL Error: %s" % str(e)
                     raise e
         
-    def seen(self, nick):
+    def executeAndCommit(self, command, *args):
         retries = 3
-        while True:
+        while retries > 0:
             try:
-                nick = string.replace(nick,"*","%")
-                self.cur.execute("SELECT * FROM seen WHERE name LIKE %s ORDER BY timestamp DESC LIMIT 3", (nick,));
-                rows = self.cur.fetchall()
-                return rows
-            except MySQLdb.Error, e:
-                try:
-                    print "seen(): MySQL Error [%d] on line %d: %s" % (e.args[0], sys.exc_info()[-1].tb_lineno, e.args[1])
-                except IndexError:
-                    print "seen(): MySQL Error: %s" % str(e)
-                if (e.args[0] == 2006):
-                    self.reconnect()
-                retries = retries - 1
-                if (retries > 0):
-                    print "Retrying..."
-                else:
-                    return
-
-    def updateSeen(self, nick, channel, message):
-        retries = 3
-        while True:
-            try:
-                self.cur.execute("SELECT id FROM seen WHERE name = %s", (nick,));
-                time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                if (self.cur.rowcount > 0):
-                    id = self.cur.fetchone()[0]
-                    self.cur.execute("UPDATE seen SET channel=%s, timestamp=%s, message=%s where id=%s", (channel, time, message, id))
-                else:
-                    self.cur.execute("INSERT INTO seen (name,channel,timestamp,message) VALUES (%s,%s,%s,%s)", (nick, channel, time, message));
+                status = self.cur.execute(command, args)
                 self.db.commit()
-                return
+                return status
             except MySQLdb.Error, e:
                 try:
-                    print "updateSeen(): MySQL Error [%d] on line %d: %s" % (e.args[0], sys.exc_info()[-1].tb_lineno, e.args[1])
+                    print "executeAndCommit(): MySQL Error [%d]: %s" % (e.args[0], e.args[1])
                 except IndexError:
-                    print "updateSeen(): MySQL Error: %s" % str(e)
-
-                if (e.args[0] == 2006):
-                    print "Reconnecting..."
-                    self.reconnect()
-                else:
-                    try:
-                        print "Rolling back..."
-                        self.db.rollback()
-                    except MySQLdb.Error:
-                        print "Rollback failed."
-
-                retries = retries - 1
-                if (retries > 0):
-                    print "Retrying..."
-                else:
-                    return
-
-    def addFactoid(self, nick, item, are, value, replace):
-        retries = 3
-        while True:
-            try:
-                self.cur.execute("SELECT id FROM factoids WHERE item=%s AND locked=1 LIMIT 1", (item,));
-                rows = self.cur.fetchall()
-                if rows:
-                    print "Can't set factoid %s because it's locked." % item
-                    return False
-
-                # If we're replacing, first delete all the existing rows
-                if replace:
-                    self.forgetFactoid(item, nick)
-                time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                self.cur.execute("INSERT INTO factoids (item,are,value,nick,dateset) VALUES (%s,%s,%s,%s,%s)", (item,are,value,nick,time));
-                self.db.commit()
-                return True
-            except MySQLdb.Error, e:
-                try:
-                    print "addFactoid(): MySQL Error [%d]: %s" % (e.args[0], e.args[1])
-                except IndexError:
-                    print "addFactoid(): MySQL Error: %s" % str(e)
-                if (e.args[0] == 2006):
-                    self.reconnect()
-                else:
-                    try:
-                        print "Rolling back..."
-                        self.db.rollback()
-                    except MySQLdb.Error:
-                        print "Rollback failed."
-                        
-                retries = retries - 1
-                if (retries > 0):
-                    print "Retrying..."
-                else:
-                    return False
-
-    def forgetFactoid(self, item, nick):
-        retries = 3
-        while True:
-            try:
-                self.cur.execute("SELECT id FROM factoids WHERE item=%s AND locked=1 LIMIT 1", (item,));
-                rows = self.cur.fetchall()
-                if rows:
-                    print "Can't forget factoid %s because it's locked." % item
-                    return False
-
-                forgotten = False
-                itemsDeleted = self.cur.execute("DELETE FROM factoids WHERE item=%s", (item,))
-                if itemsDeleted > 0:
-                    forgotten = True
-                    time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    self.cur.execute("INSERT INTO factoid_history (item,value,nick,dateset) VALUES (%s,Null,%s,%s)", (item,nick,time));
-                self.db.commit()
-                return forgotten
-            except MySQLdb.Error, e:
-                try:
-                    print "forgetFactoid(): MySQL Error [%d]: %s" % (e.args[0], e.args[1])
-                except IndexError:
-                    print "forgetFactoid(): MySQL Error: %s" % str(e)
+                    print "executeAndCommit(): MySQL Error: %s" % str(e)
                 if (e.args[0] == 2006):
                     self.reconnect()
                 else:
@@ -181,221 +77,101 @@ class DbAccess():
                     print "Retrying..."
                 else:
                     return None
-        
-    def getFactoid(self,item):
-        retries = 3
-        while True:
-            try:
-                self.cur.execute("SELECT * FROM factoids WHERE item=%s ORDER BY dateset", (item,));
-                rows = self.cur.fetchall()
-                if rows:
-                    key = int(rows[0][0])
-                    self.cur.execute("INSERT INTO refs (id, count, lastreferenced) VALUES(%s, 1, NOW()) ON DUPLICATE KEY UPDATE count=count+1", (key,));
-                    self.db.commit();
-                return rows
-            except MySQLdb.Error, e:
-                try:
-                    print "getFactoid(): MySQL Error [%d]: %s" % (e.args[0], e.args[1])
-                except IndexError:
-                    print "getFactoid(): MySQL Error: %s" % str(e)
-                if (e.args[0] == 2006):
-                    self.reconnect()
-                retries = retries - 1
-                if (retries > 0):
-                    print "Retrying..."
-                else:
-                    return None
 
-    def infoFactoid(self,item):
+    def executeAndFetchAll(self, command, *args):
         retries = 3
-        while True:
+        while retries > 0:
             try:
-                self.cur.execute("SELECT * FROM factoid_history WHERE item=%s ORDER BY dateset DESC LIMIT 4", (item,));
+                self.cur.execute(command, args)
                 rows = self.cur.fetchall()
                 return rows
             except MySQLdb.Error, e:
                 try:
-                    print "infoFactoid(): MySQL Error [%d]: %s" % (e.args[0], e.args[1])
+                    print "executeAndFetchAll(): MySQL Error [%d] on line %d: %s" % (e.args[0], sys.exc_info()[-1].tb_lineno, e.args[1])
                 except IndexError:
-                    print "infoFactoid(): MySQL Error: %s" % str(e)
+                    print "executeAndFetchAll(): MySQL Error: %s" % str(e)
                 if (e.args[0] == 2006):
                     self.reconnect()
                 retries = retries - 1
                 if (retries > 0):
                     print "Retrying..."
                 else:
-                    return None
+                    return
 
-    def addTell(self, author, recipient, message, inTracked):
-        retries = 3
-        while True:
-            try:
-                time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                self.cur.execute("INSERT INTO tell (author, recipient, timestamp, message, inTracked) VALUES (%s,%s,%s,%s,%s)", (author, recipient, time, message, inTracked));
-                self.db.commit()
-                return True
-            except MySQLdb.Error, e:
-                try:
-                    print "addTell(): MySQL Error [%d]: %s" % (e.args[0], e.args[1])
-                except IndexError:
-                    print "addTell(): MySQL Error: %s" % str(e)
-                if (e.args[0] == 2006):
-                    self.reconnect()
-                else:
-                    try:
-                        print "Rolling back..."
-                        self.db.rollback()
-                    except MySQLdb.Error:
-                        print "Rollback failed."
-                    
-                retries = retries - 1
-                if (retries > 0):
-                    print "Retrying..."
-                else:
-                    return False
-
-    def getTell(self,recipient):
-        retries = 3
-        while True:
-            try:
-                self.cur.execute("SELECT * FROM tell WHERE recipient=%s ORDER BY timestamp", (recipient,));
-                rows = self.cur.fetchall()
-                if rows:
-                    self.cur.execute("DELETE FROM tell WHERE recipient=%s", (recipient,));
-                    self.db.commit()
-                return rows
-            except MySQLdb.Error, e:
-                try:
-                    print "getTell(): MySQL Error [%d]: %s" % (e.args[0], e.args[1])
-                except IndexError:
-                    print "getTell(): MySQL Error: %s" % str(e)
-                if (e.args[0] == 2006):
-                    self.reconnect()
-                else:
-                    try:
-                        print "Rolling back..."
-                        self.db.rollback()
-                    except MySQLdb.Error:
-                        print "Rollback failed."
-                retries = retries - 1
-                if (retries > 0):
-                    print "Retrying..."
-                else:
-                    return None
-        
     def close(self):
         self.cur.close()
         self.db.close()
         
+    def seen(self, nick):
+        nick = string.replace(nick,"*","%")
+        return self.executeAndFetchAll("SELECT * FROM seen WHERE name LIKE %s ORDER BY timestamp DESC LIMIT 3", nick)
+
+    def updateSeen(self, nick, channel, message):
+        rows = self.executeAndFetchAll("SELECT id FROM seen WHERE name = %s", nick)
+        if rows:
+            id = int(rows[0][0])
+            self.executeAndCommit("UPDATE seen SET channel=%s, timestamp=NOW(), message=%s where id=%s", channel, message, id)
+        else:
+            self.executeAndCommit("INSERT INTO seen (name,channel,timestamp,message) VALUES (%s,%s,NOW(),%s)", nick, channel, message);
+
+    def addFactoid(self, nick, item, are, value, replace):
+        rows = self.executeAndFetchAll("SELECT id FROM factoids WHERE item=%s AND locked=1 LIMIT 1", item)
+        if rows:
+            print "Can't set factoid %s because it's locked." % item
+            return False
+
+        # If we're replacing, first delete all the existing rows
+        if replace:
+            self.forgetFactoid(item, nick)
+
+        self.executeAndCommit("INSERT INTO factoids (item,are,value,nick,dateset) VALUES (%s,%s,%s,%s,NOW())", item,are,value,nick)
+        return True
+
+    def forgetFactoid(self, item, nick):
+        rows = self.executeAndFetchAll("SELECT id FROM factoids WHERE item=%s AND locked=1 LIMIT 1", item);
+        if rows:
+            print "Can't forget factoid %s because it's locked." % item
+            return False
+
+        forgotten = False
+        itemsDeleted = self.executeAndCommit("DELETE FROM factoids WHERE item=%s", item)
+        if itemsDeleted > 0:
+            forgotten = True
+            self.executeAndCommit("INSERT INTO factoid_history (item,value,nick,dateset) VALUES (%s,Null,%s,NOW())", item,nick);
+        return forgotten
+        
+    def getFactoid(self,item):
+        rows = self.executeAndFetchAll("SELECT * FROM factoids WHERE item=%s ORDER BY dateset", item)
+        if rows:
+            key = int(rows[0][0])
+            self.executeAndCommit("INSERT INTO refs (id, count, lastreferenced) VALUES(%s, 1, NOW()) ON DUPLICATE KEY UPDATE count=count+1", key);
+        return rows
+
+    def infoFactoid(self,item):
+        return self.executeAndFetchAll("SELECT * FROM factoid_history WHERE item=%s ORDER BY dateset DESC LIMIT 4", item)
+
+    def addTell(self, author, recipient, message, inTracked):
+        self.executeAndCommit("INSERT INTO tell (author, recipient, timestamp, message, inTracked) VALUES (%s,%s,NOW(),%s,%s)", author, recipient, message, inTracked);
+        return True
+
+    def getTell(self,recipient):
+        rows = self.executeAndFetchAll("SELECT * FROM tell WHERE recipient=%s ORDER BY timestamp", recipient);
+        if rows:
+            self.executeAndCommit("DELETE FROM tell WHERE recipient=%s", recipient);
+        return rows
+        
     # Test only methods    
     def deleteSeen(self, user):
-        retries = 3
-        while True:
-            try:
-                itemsDeleted = self.cur.execute("DELETE FROM seen WHERE name=%s", (user,))
-                self.db.commit()
-                return itemsDeleted > 0
-            except MySQLdb.Error, e:
-                try:
-                    print "deleteSeen(): MySQL Error [%d]: %s" % (e.args[0], e.args[1])
-                except IndexError:
-                    print "deleteSeen(): MySQL Error: %s" % str(e)
-                if (e.args[0] == 2006):
-                    self.reconnect()
-                else:
-                    try:
-                        print "Rolling back..."
-                        self.db.rollback()
-                    except MySQLdb.Error:
-                        print "Rollback failed."
-                    
-                retries = retries - 1
-                if (retries > 0):
-                    print "Retrying..."
-                else:
-                    return None
+        itemsDeleted = self.executeAndCommit("DELETE FROM seen WHERE name=%s", user)
+        return itemsDeleted > 0
 
     def deleteAllFactoids(self):
-        retries = 3
-        while True:
-            try:
-                itemsDeleted = self.cur.execute("DELETE FROM factoids")
-                self.db.commit()
-                itemsDeleted = self.cur.execute("DELETE FROM factoid_history")
-                self.db.commit()
-                return
-            except MySQLdb.Error, e:
-                try:
-                    print "deleteAllFactoids(): MySQL Error [%d]: %s" % (e.args[0], e.args[1])
-                except IndexError:
-                    print "deleteAllFactoids(): MySQL Error: %s" % str(e)
-                if (e.args[0] == 2006):
-                    self.reconnect()
-                else:
-                    try:
-                        print "Rolling back..."
-                        self.db.rollback()
-                    except MySQLdb.Error:
-                        print "Rollback failed."
-                    
-                retries = retries - 1
-                if (retries > 0):
-                    print "Retrying..."
-                else:
-                    return None
+        self.executeAndCommit("DELETE FROM factoids")
+        self.executeAndCommit("DELETE FROM factoid_history")
                 
     def lockFactoid(self, factoid):
-        retries = 3
-        while True:
-            try:
-                self.cur.execute("UPDATE factoids SET locked=1 where item=%s", (factoid,))
-                self.db.commit()
-                return
-            except MySQLdb.Error, e:
-                try:
-                    print "lockFactoid(): MySQL Error [%d] on line %d: %s" % (e.args[0], sys.exc_info()[-1].tb_lineno, e.args[1])
-                except IndexError:
-                    print "lockFactoid(): MySQL Error: %s" % str(e)
-
-                if (e.args[0] == 2006):
-                    print "Reconnecting..."
-                    self.reconnect()
-                else:
-                    try:
-                        print "Rolling back..."
-                        self.db.rollback()
-                    except MySQLdb.Error:
-                        print "Rollback failed."
-
-                retries = retries - 1
-                if (retries > 0):
-                    print "Retrying..."
-                else:
-                    return
+        self.executeAndCommit("UPDATE factoids SET locked=1 where item=%s", factoid)
 
     def deleteAllTells(self):
-        retries = 3
-        while True:
-            try:
-                itemsDeleted = self.cur.execute("DELETE FROM tell")
-                self.db.commit()
-                return
-            except MySQLdb.Error, e:
-                try:
-                    print "deleteAllFactoids(): MySQL Error [%d]: %s" % (e.args[0], e.args[1])
-                except IndexError:
-                    print "deleteAllFactoids(): MySQL Error: %s" % str(e)
-                if (e.args[0] == 2006):
-                    self.reconnect()
-                else:
-                    try:
-                        print "Rolling back..."
-                        self.db.rollback()
-                    except MySQLdb.Error:
-                        print "Rollback failed."
-                    
-                retries = retries - 1
-                if (retries > 0):
-                    print "Retrying..."
-                else:
-                    return None
+        self.executeAndCommit("DELETE FROM tell")
+
