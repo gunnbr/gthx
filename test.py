@@ -158,9 +158,6 @@ class DbAccessSeenTest(unittest.TestCase):
         self.db.deleteSeen(DbAccessSeenTest.seenuser2)
 
 class DbAccessFactoidTest(unittest.TestCase):
-
-    missingFactoid = "missingfactoid"
-    
     def setUp(self):
         dbuser = os.getenv("GTHX_MYSQL_USER")
         if not dbuser:
@@ -177,7 +174,8 @@ class DbAccessFactoidTest(unittest.TestCase):
         self.db = DbAccess(dbuser, dbpassword, dbname)
 
     def test_get_missing_factoid(self):
-        data = self.db.getFactoid(DbAccessFactoidTest.missingFactoid)
+        missingFactoid = "missingfactoid"
+        data = self.db.getFactoid(missingFactoid)
         self.assertFalse(data, "Got a valid return from a factoid that shouldn't exist")
 
     def test_add_factoid(self):
@@ -445,14 +443,246 @@ class DbAccessFactoidTest(unittest.TestCase):
         info = self.db.infoFactoid(nonexistantitem)
         self.assertFalse(info, "Factoid has info when it shouldn't.")
 
+    def test_info_for_forget_factoid(self):
+        user="someguy"
+        userWhoDeletes="killer"
+        item="forgottenfactoid"
+        isAre=False
+        definition="something to test"
 
-    # Test:
-    # Factoids returned are in ascending date order
-    # Factoid history for:
-    #   Add additional
-    #   Forget single factoid
-    #   Forget multiple part factoid
-    
+        # Add the factoid
+        success = self.db.addFactoid(user, item, isAre, definition, False)
+        self.assertTrue(success, "Failed to add a new factoid")
+
+        # Verify that it now has some history
+        info = self.db.infoFactoid(item)
+        self.assertTrue(info, "Factoid has no info when it should.")
+
+        # Verify that there's just one of info
+        self.assertEqual(len(info), 1, "Factoid doesn't have the correct amount of info")
+
+        # Now forget it..
+        status = self.db.forgetFactoid(item,userWhoDeletes)
+
+        # ...and verify that the info gets updated
+        info = self.db.infoFactoid(item)
+        self.assertTrue(info, "Factoid has no info when it should.")
+
+        # Verify that there are 2 entries now
+        self.assertEqual(len(info), 2, "Factoid doesn't have the correct amount of info")
+
+        # Verify that the first entry correctly specifies the add
+        history = info[0]
+        self.assertEqual(history[1], item, "Factoid history has the wrong item name")
+        self.assertEqual(history[2], definition, "Factoid history has the wrong definition: '%s'" % history[2])
+        self.assertEqual(history[3], user, "Factoid history has the wrong username")
+        delta = datetime.now() - history[4]
+        self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
+        self.assertIsNone(history[5], "Factoid history ref count has an item name when it shouldn't.")
+        self.assertIsNone(history[6], "Factoid history has a count when it shouldn't")
+        self.assertIsNone(history[7], "Factoid history has a last referenced time when it shouldn't.")
+        
+        # Verify that the second entry correctly specifies the forget
+        history = info[1]
+        self.assertEqual(history[1], item, "Factoid history has the wrong item name")
+        self.assertIsNone(history[2], "Factoid history for forgotten entry has a definition when it shouldn't")
+        self.assertEqual(history[3], userWhoDeletes, "Factoid history for forgotten entry has the wrong username")
+        delta = datetime.now() - history[4]
+        self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
+        self.assertIsNone(history[5], "Factoid history ref count has an item name when it shouldn't.")
+        self.assertIsNone(history[6], "Factoid history has a count when it shouldn't")
+        self.assertIsNone(history[7], "Factoid history has a last referenced time when it shouldn't.")
+
+        # Now reference this factoid and see if it gets added to the ref count
+        data = self.db.getFactoid(item)
+        
+        info = self.db.infoFactoid(item)
+        self.assertTrue(info, "Factoid has no info when it should.")
+        self.assertEqual(len(info), 2, "Factoid doesn't have the correct amount of info")
+
+        # Verify that there is still no ref count
+        history = info[0]
+        self.assertIsNone(history[5], "Factoid history ref does not contain the correct item.")
+        self.assertIsNone(history[6], "Factoid history has a ref count when it shouldn't: %s" % history[6])
+        self.assertIsNone(history[7], "Factoid history has a reference time when it shouldn't")
+        
+    def test_ref_count_for_forget_factoid(self):
+        user="someguy"
+        userWhoDeletes="killer"
+        item="hereGoneBackAgain"
+        isAre=False
+        definition="a factoid that keeps disappearing"
+
+        # Add the factoid
+        success = self.db.addFactoid(user, item, isAre, definition, False)
+        self.assertTrue(success, "Failed to add a new factoid")
+
+        # Verify that it now has some history
+        info = self.db.infoFactoid(item)
+        self.assertTrue(info, "Factoid has no info when it should.")
+        self.assertEqual(len(info), 1, "Factoid doesn't have the correct amount of info")
+
+        # Reference it
+        data = self.db.getFactoid(item)
+        
+        # Now forget it..
+        status = self.db.forgetFactoid(item,userWhoDeletes)
+
+        # ...and verify that the ref count still exists
+        info = self.db.infoFactoid(item)
+        self.assertTrue(info, "Factoid has no info when it should.")
+        self.assertEqual(len(info), 2, "Factoid doesn't have the correct amount of info")
+
+        # Verify that the ref count still exists
+        history = info[0]
+        self.assertEquals(history[6], 1, "Factoid history ref count is incorrect: %s" % history[6])
+        history = info[1]
+        self.assertEquals(history[6], 1, "Factoid history ref count is incorrect: %s" % history[6])
+
+        # Now reference again now that it's deleted...
+        data = self.db.getFactoid(item)
+        
+        info = self.db.infoFactoid(item)
+        self.assertTrue(info, "Factoid has no info when it should.")
+        self.assertEqual(len(info), 2, "Factoid doesn't have the correct amount of info")
+
+        # Verify that the ref count hasn't changed
+        history = info[0]
+        self.assertEquals(history[6], 1, "Factoid history ref count is incorrect: %s" % history[6])
+        history = info[1]
+        self.assertEquals(history[6], 1, "Factoid history ref count is incorrect: %s" % history[6])
+
+    def test_info_for_forget_factoid(self):
+        user="someguy"
+        user2="otherguy"
+        userWhoDeletes="killer"
+        item="multifactoid"
+        isAre=False
+        definition="something to test"
+        definition2="something to forget"
+
+        # Add the factoid
+        success = self.db.addFactoid(user, item, isAre, definition, False)
+        self.assertTrue(success, "Failed to add a new factoid")
+
+        # Add a second entry
+        success = self.db.addFactoid(user2, item, isAre, definition2, False)
+        self.assertTrue(success, "Failed to add a second entry to a factoid")
+        
+        # Now forget it..
+        status = self.db.forgetFactoid(item,userWhoDeletes)
+
+        # Verify that it now has some history
+        info = self.db.infoFactoid(item)
+        self.assertTrue(info, "Factoid has no info when it should.")
+
+        # Verify that there are 3 info entries
+        self.assertEqual(len(info), 3, "Factoid doesn't have the correct amount of info")
+
+        # Verify that the first entry correctly specifies the first add
+        history = info[0]
+        self.assertEqual(history[1], item, "Factoid history has the wrong item name")
+        self.assertEqual(history[2], definition, "Factoid history has the wrong definition: '%s'" % history[2])
+        self.assertEqual(history[3], user, "Factoid history has the wrong username")
+        delta = datetime.now() - history[4]
+        self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
+        self.assertIsNone(history[5], "Factoid history ref count has an item name when it shouldn't.")
+        self.assertIsNone(history[6], "Factoid history has a count when it shouldn't")
+        self.assertIsNone(history[7], "Factoid history has a last referenced time when it shouldn't.")
+        
+        # Verify that the second entry correctly specifies the second add
+        history = info[1]
+        self.assertEqual(history[1], item, "Factoid history has the wrong item name")
+        self.assertEqual(history[2], definition2, "Factoid history has the wrong definition: '%s'" % history[2])
+        self.assertEqual(history[3], user2, "Factoid history has the wrong username")
+        delta = datetime.now() - history[4]
+        self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
+        self.assertIsNone(history[5], "Factoid history ref count has an item name when it shouldn't.")
+        self.assertIsNone(history[6], "Factoid history has a count when it shouldn't")
+        self.assertIsNone(history[7], "Factoid history has a last referenced time when it shouldn't.")
+
+        # Verify that the third entry correctly specifies the forget
+        history = info[2]
+        self.assertEqual(history[1], item, "Factoid history has the wrong item name")
+        self.assertIsNone(history[2], "Factoid history for forgotten entry has a definition when it shouldn't")
+        self.assertEqual(history[3], userWhoDeletes, "Factoid history for forgotten entry has the wrong username")
+        delta = datetime.now() - history[4]
+        self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
+        self.assertIsNone(history[5], "Factoid history ref count has an item name when it shouldn't.")
+        self.assertIsNone(history[6], "Factoid history has a count when it shouldn't")
+        self.assertIsNone(history[7], "Factoid history has a last referenced time when it shouldn't.")
+
+    def test_overwrite_multipart_factoid(self):
+        user="someguy"
+        user2="otherguy"
+        user3="overwriter"
+        item="multiforgottenfactoid"
+        isAre=True
+        definition="something to test"
+        definition2="something to forget"
+        definition3="the REAL definition"
+
+        # Add the factoid
+        success = self.db.addFactoid(user, item, isAre, definition, False)
+        self.assertTrue(success, "Failed to add a new factoid")
+
+        # Add a second entry
+        success = self.db.addFactoid(user2, item, isAre, definition2, False)
+        self.assertTrue(success, "Failed to add a second entry to a factoid")
+        
+        # Overwrite them with a new one
+        success = self.db.addFactoid(user3, item, isAre, definition3, True)
+        self.assertTrue(success, "Failed to overwrite a multi-part factoid")
+
+        # Verify that it now has some history
+        info = self.db.infoFactoid(item)
+        self.assertTrue(info, "Factoid has no info when it should.")
+        self.assertEqual(len(info), 4, "Factoid doesn't have the correct amount of info")
+
+        # Verify that the first entry correctly specifies the first add
+        history = info[0]
+        self.assertEqual(history[1], item, "Factoid history has the wrong item name")
+        self.assertEqual(history[2], definition, "Factoid history has the wrong definition: '%s'" % history[2])
+        self.assertEqual(history[3], user, "Factoid history has the wrong username")
+        delta = datetime.now() - history[4]
+        self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
+        self.assertIsNone(history[5], "Factoid history ref count has an item name when it shouldn't.")
+        self.assertIsNone(history[6], "Factoid history has a count when it shouldn't")
+        self.assertIsNone(history[7], "Factoid history has a last referenced time when it shouldn't.")
+        
+        # Verify that the second entry correctly specifies the second add
+        history = info[1]
+        self.assertEqual(history[1], item, "Factoid history has the wrong item name")
+        self.assertEqual(history[2], definition2, "Factoid history has the wrong definition: '%s'" % history[2])
+        self.assertEqual(history[3], user2, "Factoid history has the wrong username")
+        delta = datetime.now() - history[4]
+        self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
+        self.assertIsNone(history[5], "Factoid history ref count has an item name when it shouldn't.")
+        self.assertIsNone(history[6], "Factoid history has a count when it shouldn't")
+        self.assertIsNone(history[7], "Factoid history has a last referenced time when it shouldn't.")
+
+        # Verify that the third entry correctly specifies the forget
+        history = info[2]
+        self.assertEqual(history[1], item, "Factoid history has the wrong item name")
+        self.assertIsNone(history[2], "Factoid history for forgotten entry has a definition when it shouldn't")
+        self.assertEqual(history[3], user3, "Factoid history for forgotten entry has the wrong username")
+        delta = datetime.now() - history[4]
+        self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
+        self.assertIsNone(history[5], "Factoid history ref count has an item name when it shouldn't.")
+        self.assertIsNone(history[6], "Factoid history has a count when it shouldn't")
+        self.assertIsNone(history[7], "Factoid history has a last referenced time when it shouldn't.")
+
+        # Verify that the fourth entry correctly specifies the overwrite add
+        history = info[3]
+        self.assertEqual(history[1], item, "Factoid history has the wrong item name")
+        self.assertEqual(history[2], definition3, "Factoid history has the wrong definition: '%s'" % history[2])
+        self.assertEqual(history[3], user3, "Factoid history has the wrong username")
+        delta = datetime.now() - history[4]
+        self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
+        self.assertIsNone(history[5], "Factoid history ref count has an item name when it shouldn't.")
+        self.assertIsNone(history[6], "Factoid history has a count when it shouldn't")
+        self.assertIsNone(history[7], "Factoid history has a last referenced time when it shouldn't.")
+
     def tearDown(self):
         # Clear all factoids and history
         self.db.deleteAllFactoids()
