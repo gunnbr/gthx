@@ -349,13 +349,110 @@ class DbAccessFactoidTest(unittest.TestCase):
         success = self.db.addFactoid(user, item, isAre, definition, True)
         self.assertFalse(success, "Was incorrectly able to replace a locked factoid")
         
+    def test_factoid_info(self):
+        user="someguy"
+        counteditem="countedfactoid"
+        isAre=False
+        definition="something to test"
+        overwrite=False
+
+        # Verify that this factoid has no history to start
+        info = self.db.infoFactoid(counteditem)
+        self.assertFalse(info, "Factoid has info when it shouldn't.")
+
+        # Add the factoid
+        success = self.db.addFactoid(user, counteditem, isAre, definition, overwrite)
+        self.assertTrue(success, "Failed to add a new factoid")
+
+        # Verify that it now has some history
+        info = self.db.infoFactoid(counteditem)
+        self.assertTrue(info, "Factoid has no info when it should.")
+
+        # Verify that there's just one of info
+        self.assertEqual(len(info), 1, "Factoid doesn't have the correct amount of info")
+
+        # And verify that the info is correct
+        history = info[0]
+        self.assertEqual(history[1], counteditem, "Factoid history has the wrong item name")
+        self.assertEqual(history[2], definition, "Factoid history has the wrong definition")
+        self.assertEqual(history[3], user, "Factoid history has the wrong username")
+        delta = datetime.now() - history[4]
+        self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
+        self.assertIsNone(history[5], "Factoid history has the wrong item name the second place: %s" % history[5])
+        self.assertIsNone(history[6], "Factoid history has the wrong count: %s" % history[6])
+        self.assertIsNone(history[7], "Factoid history has the wrong last referenced time: %s" % history[7])
+                        
+        # Now do a reference...
+        data = self.db.getFactoid(counteditem)
+
+        # ...and verify that the info gets updated
+        info = self.db.infoFactoid(counteditem)
+        self.assertTrue(info, "Factoid has no info when it should.")
+
+        # Verify that there's still just one of info
+        self.assertEqual(len(info), 1, "Factoid doesn't have the correct amount of info")
+
+        # And verify that the info is correct
+        history = info[0]
+        self.assertEqual(history[1], counteditem, "Factoid history has the wrong item name")
+        self.assertEqual(history[2], definition, "Factoid history has the wrong definition")
+        self.assertEqual(history[3], user, "Factoid history has the wrong username")
+        delta = datetime.now() - history[4]
+        self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
+        self.assertEqual(history[5], counteditem, "Factoid history has the wrong item name the second place: %s" % history[5])
+        self.assertEqual(history[6], 1, "Factoid history has the wrong count: %s" % history[6])
+        delta = datetime.now() - history[7]
+        self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
+        
+        # Finally do a few more references
+        data = self.db.getFactoid(counteditem)
+        data = self.db.getFactoid(counteditem)
+        data = self.db.getFactoid(counteditem)
+        data = self.db.getFactoid(counteditem)
+
+        # ...and verify that the info gets updated
+        info = self.db.infoFactoid(counteditem)
+        self.assertTrue(info, "Factoid has no info when it should.")
+
+        # Verify that there's still just one of info
+        self.assertEqual(len(info), 1, "Factoid doesn't have the correct amount of info")
+
+        # And verify that the info is correct
+        history = info[0]
+        self.assertEqual(history[1], counteditem, "Factoid history has the wrong item name")
+        self.assertEqual(history[2], definition, "Factoid history has the wrong definition")
+        self.assertEqual(history[3], user, "Factoid history has the wrong username")
+        delta = datetime.now() - history[4]
+        self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
+        self.assertEqual(history[5], counteditem, "Factoid history has the wrong item name the second place: %s" % history[5])
+        self.assertEqual(history[6], 5, "Factoid history has the wrong count: %s" % history[6])
+        delta = datetime.now() - history[7]
+        self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
+        
+    def test_get_factoid_doesnt_set_refs(self):
+        user="someguy"
+        nonexistantitem="not_a_factoid"
+
+        # Verify that this factoid has no history to start
+        info = self.db.infoFactoid(nonexistantitem)
+        self.assertFalse(info, "Factoid has info when it shouldn't.")
+
+        # Now do a reference...
+        data = self.db.getFactoid(nonexistantitem)
+        self.assertFalse(data, "Factoid exists when it shouldn't.")
+
+        # Verify that this factoid still has no history
+        info = self.db.infoFactoid(nonexistantitem)
+        self.assertFalse(info, "Factoid has info when it shouldn't.")
+
+
     # Test:
+    # Factoids returned are in ascending date order
     # Factoid history for:
-    #   Adding new
     #   Add additional
     #   Forget single factoid
     #   Forget multiple part factoid
-
+    
     def tearDown(self):
         # Clear all factoids and history
         self.db.deleteAllFactoids()

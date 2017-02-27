@@ -46,20 +46,9 @@ CREATE TABLE `version` (
 INSERT INTO version (version, timestamp) VALUES (2, CURRENT_TIMESTAMP);
 
 CREATE TABLE `refs` (
-  `id` int(11) NOT NULL,
+  `item` varchar(255) NOT NULL,
   `count` int(11) NOT NULL,
   `lastreferenced` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`item`)
 );
 
-# Missing a trigger that the current DbAccess requires!!
-# (But maybe we don't want it and should just change DbAccess so it's not required)
-# mysql> show triggers in gthx;
-# +---------------+--------+----------+-----------------------------------------------------------------------------------------------------------------------------+--------+---------+----------+----------------+----------------------+----------------------+--------------------+
-#| Trigger       | Event  | Table    | Statement                                                                                                                   | Timing | Created | sql_mode | Definer        | character_set_client | collation_connection | Database Collation |
-#+---------------+--------+----------+-----------------------------------------------------------------------------------------------------------------------------+--------+---------+----------+----------------+----------------------+----------------------+--------------------+
-#| insertfactoid | INSERT | factoids | BEGIN
-    INSERT INTO factoid_history SET item = NEW.item, value = NEW.value, nick = NEW.nick, dateset = NEW.dateset;
-      END | BEFORE | NULL    |          | gthx@localhost | utf8                 | utf8_general_ci      | latin1_swedish_ci  |
-#+---------------+--------+----------+-----------------------------------------------------------------------------------------------------------------------------+--------+---------+----------+----------------+----------------------+----------------------+--------------------+
-#      1 row in set (0.00 sec)

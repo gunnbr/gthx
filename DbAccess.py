@@ -125,6 +125,7 @@ class DbAccess():
             self.forgetFactoid(item, nick)
 
         self.executeAndCommit("INSERT INTO factoids (item,are,value,nick,dateset) VALUES (%s,%s,%s,%s,NOW())", item,are,value,nick)
+        self.executeAndCommit("INSERT INTO factoid_history (item,value,nick,dateset) VALUES (%s,%s,%s,NOW())", item,value,nick);
         return True
 
     def forgetFactoid(self, item, nick):
@@ -144,11 +145,15 @@ class DbAccess():
         rows = self.executeAndFetchAll("SELECT * FROM factoids WHERE item=%s ORDER BY dateset", item)
         if rows:
             key = int(rows[0][0])
-            self.executeAndCommit("INSERT INTO refs (id, count, lastreferenced) VALUES(%s, 1, NOW()) ON DUPLICATE KEY UPDATE count=count+1", key);
+            self.executeAndCommit("INSERT INTO refs (item, count, lastreferenced) VALUES(%s, 1, NOW()) ON DUPLICATE KEY UPDATE count=count+1", item);
         return rows
 
     def infoFactoid(self,item):
-        return self.executeAndFetchAll("SELECT * FROM factoid_history WHERE item=%s ORDER BY dateset DESC LIMIT 4", item)
+        return self.executeAndFetchAll("""SELECT * FROM factoid_history 
+                                          LEFT JOIN refs ON factoid_history.item = refs.item
+                                          WHERE factoid_history.item=%s 
+                                          ORDER BY dateset DESC 
+                                          LIMIT 4""", item)
 
     def addTell(self, author, recipient, message, inTracked):
         self.executeAndCommit("INSERT INTO tell (author, recipient, timestamp, message, inTracked) VALUES (%s,%s,NOW(),%s,%s)", author, recipient, message, inTracked);
@@ -168,6 +173,7 @@ class DbAccess():
     def deleteAllFactoids(self):
         self.executeAndCommit("DELETE FROM factoids")
         self.executeAndCommit("DELETE FROM factoid_history")
+        self.executeAndCommit("DELETE FROM refs")
                 
     def lockFactoid(self, factoid):
         self.executeAndCommit("UPDATE factoids SET locked=1 where item=%s", factoid)
