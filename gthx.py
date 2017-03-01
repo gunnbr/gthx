@@ -24,7 +24,7 @@ from DbAccess import Tell
 
 from Email import Email
 
-VERSION = "gthx version 0.20beta 2017-02-20"
+VERSION = "gthx version 0.21 2017-03-01"
 trackednick = ""
 channel = ""
 mynick = ""
@@ -193,7 +193,8 @@ class Gthx(irc.IRCClient):
         """
         Called when I see another user disconnect from the network.
         """
-        print "%s disconnected : %s" % (user, quitMessage)
+        safeQuitMessage = quitMessage.decode("utf-8")
+        print "%s disconnected : %s" % (user, safeQuitMessage)
         if trackednick and (user == trackednick):
             for channel in self.channelList:
                 self.trackedpresent[channel] = False
@@ -459,7 +460,8 @@ class Gthx(irc.IRCClient):
             if factoid:
                 invalidwords = re.match('(here|how|it|something|that|this|what|when|where|which|who|why|you)', factoid.group(1), re.IGNORECASE)
                 if not invalidwords:
-                    print "%s tried to set factoid '%s'." % (user, factoid.group(1))
+                    safeFactoid = factoid.group(1).decode("utf-8")
+                    print "%s tried to set factoid '%s'." % (user, safeFactoid)
                     success = self.db.addFactoid(user, factoid.group(1), True if factoid.group(2) == 'are' else False, factoid.group(4), True if not factoid.group(3) else False)
                     if canReply:
                         if success:
@@ -471,7 +473,8 @@ class Gthx(irc.IRCClient):
         if canReply:
             f = self.factoidQuery.match(parseMsg)
             if f:
-                print "factoid query from %s:%s for '%s'" % (user, channel, f.group(1))
+                safeFactoid = f.group(1).decode("utf-8")
+                print "factoid query from %s:%s for '%s'" % (user, channel, safeFactoid)
                 answer = self.getFactoidString(f.group(1))
                 if answer:
                     # Replace !who and !channel in the reply
@@ -493,23 +496,30 @@ class Gthx(irc.IRCClient):
             query = parseMsg[5:]
             if query[-1:] == "?":
                 query = query[:-1]
-            print "info request for '%s' ReplyChannel is '%s'" % (query, replyChannel)
+            safeFactoid = query.decode("utf-8")
+            print "info request for '%s' ReplyChannel is '%s'" % (safeFactoid, replyChannel)
             refcount = 0
             answer = self.db.infoFactoid(query)
             if answer:
+                count = answer[0][6]
+                if not count:
+                    count = "0"
+                print "Factoid '%s' has been referenced %s times" % (safeFactoid, count)
+                self.msg(replyChannel, "Factoid '%s' has been referenced %s times" % (query, count))
                 for factoid in answer:
                     user = factoid[3]
                     value = factoid[2]
                     if not user:
                         user = "Unknown"
                     if value:
-                        print "At %s, %s set to: %s" % (factoid[4], user, value)
+                        safeValue = value.decode("utf-8")
+                        print "At %s, %s set to: %s" % (factoid[4], user, safeValue)
                         self.msg(replyChannel, "At %s, %s set to: %s" % (factoid[4], user, value))
                     else:
                         print "At %s, %s deleted this item" % (factoid[4], user)
                         self.msg(replyChannel, "At %s, %s deleted this item" % (factoid[4], user))
             else:
-                print "No info for factoid '%s'" % query
+                print "No info for factoid '%s'" % safeFactoid
                 self.msg(replyChannel, "Sorry, I couldn't find an entry for %s" % query)
 
         # Check for forget request
@@ -581,11 +591,11 @@ if __name__ == '__main__':
         print "No nick specified. Did you set GTHX_NICK?"
     else:
         try:
-            # initialize logging
-            log.startLogging(open(logfile, 'a'))
-
             # Setup email notification
             emailClient = Email()
+
+            # initialize logging
+            log.startLogging(open(logfile, 'a'))
 
             # create factory protocol and application
             f = GthxFactory(channels, mynick, emailClient)
