@@ -24,7 +24,7 @@ from DbAccess import Tell
 
 from Email import Email
 
-VERSION = "gthx version 0.21 2017-03-01"
+VERSION = "gthx version 0.21 2017-03-02"
 trackednick = ""
 channel = ""
 mynick = ""
