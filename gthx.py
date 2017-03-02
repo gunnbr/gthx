@@ -122,7 +122,7 @@ class Gthx(irc.IRCClient):
         self.sendLine('AUTHENTICATE ' + sasl)
   
     def irc_903(self, prefix, params):
-        self.log("Got SASL connection successul.");
+        self.log("Got SASL connection successful.");
         self.sendLine('CAP END')
   
     def irc_904(self, prefix, params):
