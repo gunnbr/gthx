@@ -173,6 +173,21 @@ class DbAccess():
             return int(rows[0][0])
         return 0
 
+    def mood(self):
+        rows = self.executeAndFetchAll("""SELECT botsnack - botsmack as mood
+                                          FROM
+                                          (
+                                            SELECT IFNULL ((SELECT count FROM refs WHERE item="botsnack"), 0) as botsnack, botsmack
+                                            FROM
+                                            (
+                                              SELECT IFNULL ((SELECT count FROM refs WHERE item="botsmack"), 0) as botsmack
+                                            ) as T2
+                                          ) as T;""")
+        if not rows:
+            return None
+        else:
+            return int(rows[0][0])
+
     # Test only methods    
     def deleteSeen(self, user):
         itemsDeleted = self.executeAndCommit("DELETE FROM seen WHERE name=%s", user)

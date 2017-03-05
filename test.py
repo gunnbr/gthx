@@ -321,7 +321,6 @@ class DbAccessFactoidTest(unittest.TestCase):
         wasDeleted = self.db.forgetFactoid(item, user)
         self.assertFalse(wasDeleted, "Incorrect return value from forgetFactoid")
 
-
     def test_lock_and_replace_or_forget_factoid(self):
         user="someuser"
         item="lockedfactoid"
@@ -683,6 +682,50 @@ class DbAccessFactoidTest(unittest.TestCase):
         self.assertIsNone(history[6], "Factoid history has a count when it shouldn't")
         self.assertIsNone(history[7], "Factoid history has a last referenced time when it shouldn't.")
 
+    def test_mood(self):
+        # Testing mood here because it relies on factoids
+
+        # Test that mood is initially 0 even with botsnack and botsmack
+        # not in the DB
+        mood = self.db.mood()
+        self.assertEqual(mood, 0, "Empty DB returned wrong mood")
+
+        # Add the factoids
+        success = self.db.addFactoid("testuser", "botsnack", 0, "<reply>Thank you!", False)
+        success = self.db.addFactoid("testuser", "botsmack", 0, "<reply>OUCH!", False)
+
+        # Give the bot 1 snack...
+        self.db.getFactoid("botsnack")
+        
+        # ...and make sure the mood is 1
+        mood = self.db.mood()
+        self.assertEqual(mood, 1, "After botsnack returned the wrong mood")
+
+        # Smack it down...
+        self.db.getFactoid("botsmack")
+
+        # ...and verify we're back at 0
+        mood = self.db.mood()
+        self.assertEqual(mood, 0, "After equal snacks and smacks, mood is not 0")
+
+        # A couple more snacks...        
+        self.db.getFactoid("botsnack")
+        self.db.getFactoid("botsnack")
+
+        # Verify we're at 2
+        mood = self.db.mood()
+        self.assertEqual(mood, 2, "After 2 snacks, mood is not 2")
+
+        # 4 smacks...        
+        self.db.getFactoid("botsmack")
+        self.db.getFactoid("botsmack")
+        self.db.getFactoid("botsmack")
+        self.db.getFactoid("botsmack")
+
+        # Now we should be at -2
+        mood = self.db.mood()
+        self.assertEqual(mood, -2, "After 4 smacks, mood is not -22")
+        
     def tearDown(self):
         # Clear all factoids and history
         self.db.deleteAllFactoids()
@@ -859,7 +902,7 @@ class DbAccessThingiverseTest(unittest.TestCase):
         
     def tearDown(self):
         self.db.deleteAllThingiverseRefs()
-        
+
 if __name__ == '__main__':
     unittest.main()
     
