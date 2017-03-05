@@ -327,7 +327,24 @@ class Gthx(irc.IRCClient):
             return fstring
         else:
             return None
-        
+
+    def moodToString(self, mood):
+        if mood < -100:
+            return "suicidal!"
+        if mood < -50:
+            return "really depressed."
+        if mood < -10:
+            return "depressed."
+        if mood < 0:
+            return "kinda bummed."
+        if mood == 0:
+            return "meh, okay I guess."
+        if mood < 10:
+            return "alright."
+        if mood < 50:
+            return "pretty good."
+        return "great, Great, GREAT!!"
+
     def privmsg(self, user, channel, msg):
         """Called when the bot receives a message, both public and private."""
         user = user.split('!', 1)[0]
@@ -420,6 +437,8 @@ class Gthx(irc.IRCClient):
                     reply = "%s: OK; Up for %s; %s is %s" % (VERSION, timesincestring(self.uptimeStart), trackednick, "PRESENT" if self.trackedpresent[channel] else "GONE")
             else:
                 reply = "%s: OK; Up for %s; standalone mode" % (VERSION, timesincestring(self.uptimeStart))
+            mood = self.db.mood()
+            reply += " mood: %s" % self.moodToString(mood)
             self.msg(replyChannel, reply)
             return
         
