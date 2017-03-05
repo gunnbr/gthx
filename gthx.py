@@ -11,6 +11,10 @@ Responds for "seen", "tell", factoids
 from twisted.words.protocols import irc
 from twisted.internet import reactor, protocol, error
 from twisted.python import log
+from twisted.web.client import Agent
+from twisted.web.http_headers import Headers
+from twisted.internet.protocol import Protocol
+from twisted.internet.defer import Deferred
 
 # system imports
 import time, sys, re, os
@@ -29,6 +33,23 @@ trackednick = ""
 channel = ""
 mynick = ""
 
+
+class TitleParser(Protocol):
+        def __init__(self, finished):
+            self.title = None
+            self.finished = finished
+            self.titleQuery = re.compile("<title>(.*) - Thingiverse<\/title>", re.IGNORECASE | re.MULTILINE)
+
+        def dataReceived(self, bytes):
+            match = self.titleQuery.search(bytes)
+            if match:
+                self.title = match.group(1)
+                print "Got title of: ", self.title
+                
+        def connectionLost(self, reason):
+            print 'Finished receiving body:', reason.getErrorMessage()
+            self.finished.callback(self.title)
+            
 def timesincestring(firsttime):
         since = datetime.now() - firsttime
         years = since.days / 365
@@ -97,6 +118,7 @@ class Gthx(irc.IRCClient):
         self.factoidQuery = re.compile("(.+)[?!](\s*$|\s*\|\s*([a-zA-Z\*_\\\[\]\{\}^`|\*][a-zA-Z0-9\*_\\\[\]\{\}^`|-]*)$)")
         self.factoidSet = re.compile("(.+?)\s(is|are)(\salso)?\s(.+)")
         self.googleQuery = re.compile("\s*google\s+(.*?)\s+for\s+([a-zA-Z\*_\\\[\]\{\}^`|\*][a-zA-Z0-9\*_\\\[\]\{\}^`|-]*)")
+        self.thingMention = re.compile("http(s)?:\/\/www.thingiverse.com\/thing:(\d+)", re.IGNORECASE)
         self.uptimeStart = datetime.now()
         self.lurkerReplyChannel = ""
         if os.getenv("GTHX_NICKSERV_PASSWORD"):
@@ -532,7 +554,42 @@ class Gthx(irc.IRCClient):
                     self.msg(replyChannel, "%s: I've forgotten about %s" % (user, query))
                 else:
                     self.msg(replyChannel, "%s: Okay, but %s didn't exist anyway" % (user, query))
-        
+
+        # Check for thingiverse mention
+        if canReply:
+            match = self.thingMention.search(parseMsg)
+            if match:
+                thingId = int(match.group(2))
+                print "Match for thingiverse query item %s" % thingId
+                refs = self.db.addThingiverseRef(thingId)
+                agent = Agent(reactor)
+                titleQuery = agent.request(
+                    'GET',
+                    'http://www.thingiverse.com/thing:%s' % thingId,
+                    Headers({'User-Agent': ['gthx IRC bot']}),
+                    None)
+                def titleResponse(title):
+                    if title:
+                        print "The title for thing %s is: %s " % (thingId, title)
+                        reply = 'http://www.thingiverse.com/thing:%s => %s => %s IRC mentions' % (thingId, title, refs)
+                        self.msg(replyChannel, reply)
+                    else:
+                        print "No title found for thing %s" % (thingId)
+                        reply = 'http://www.thingiverse.com/thing:%s => ???? => %s IRC mentions' % (thingId, refs)
+                        self.msg(replyChannel, reply)
+                    
+                def queryResponse(response):
+                    if response.code == 200:
+                        finished = Deferred()
+                        finished.addCallback(titleResponse)
+                        response.deliverBody(TitleParser(finished))
+                        return finished
+                    print "Got error response from thingiverse query: %s" % (response)
+                    titleResponse(None)
+                    return None
+            
+                titleQuery.addCallback(queryResponse)
+
     def action(self, sender, channel, message):
         m = re.match("([a-zA-Z\*_\\\[\]\{\}^`|\*][a-zA-Z0-9\*_\\\[\]\{\}^`|-]*)", sender)
         if m:
