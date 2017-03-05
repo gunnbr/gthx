@@ -52,3 +52,11 @@ CREATE TABLE `refs` (
   PRIMARY KEY (`item`)
 );
 
+CREATE TABLE `thingiverseRefs` (
+  `item` int(11) NOT NULL,
+  `count` int(11) NOT NULL,
+  `lastreferenced` datetime DEFAULT NULL,
+  PRIMARY KEY (`item`)
+);
+
+# Add locked botsnack and botsmack factoids?

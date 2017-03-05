@@ -826,6 +826,39 @@ class DbAccessTellTest(unittest.TestCase):
     def tearDown(self):
         self.db.deleteAllTells()
     
+class DbAccessThingiverseTest(unittest.TestCase):
+    
+    def setUp(self):
+        dbuser = os.getenv("GTHX_MYSQL_USER")
+        if not dbuser:
+            raise ValueError("No username specified. Have you set GTHX_MYSQL_USER?")
+
+        dbpassword = os.getenv("GTHX_MYSQL_PASSWORD")
+        if not dbpassword:
+            raise ValueError("No password specified. Have you set GTHX_MYSQL_PASSWORD?")
+
+        dbname = os.getenv("GTHX_MYSQL_DATABASE")
+        if not dbname:
+            raise ValueError("No database specified. Have you set GTHX_MYSQL_DATABASE?")
+
+        self.db = DbAccess(dbuser, dbpassword, dbname)
+
+    def test_thingiverse_res(self):
+        testItem = 1234
+
+        # Verify that referencing an item the first time causes the ref count to
+        # be set to 1
+        refs = self.db.addThingiverseRef(testItem)
+        self.assertEquals(refs, 1, "First thingiverse item returned wrong number of references.")
+
+        refs = self.db.addThingiverseRef(testItem)
+        self.assertEquals(refs, 2, "Second thingiverse item returned wrong number of references.")
+
+        refs = self.db.addThingiverseRef(testItem)
+        self.assertEquals(refs, 3, "Third thingiverse item returned wrong number of references.")
+        
+    def tearDown(self):
+        self.db.deleteAllThingiverseRefs()
         
 if __name__ == '__main__':
     unittest.main()

@@ -164,7 +164,15 @@ class DbAccess():
         if rows:
             self.executeAndCommit("DELETE FROM tell WHERE recipient=%s", recipient);
         return rows
-        
+
+    def addThingiverseRef(self,item):
+        self.executeAndCommit("INSERT INTO thingiverseRefs (item, count, lastreferenced) VALUES(%s, 1, NOW()) ON DUPLICATE KEY UPDATE count=count+1", item);
+        rows = self.executeAndFetchAll("SELECT count FROM thingiverseRefs WHERE item=%s", item);
+        if rows:
+            # First row, first item contains the result
+            return int(rows[0][0])
+        return 0
+
     # Test only methods    
     def deleteSeen(self, user):
         itemsDeleted = self.executeAndCommit("DELETE FROM seen WHERE name=%s", user)
@@ -181,3 +189,5 @@ class DbAccess():
     def deleteAllTells(self):
         self.executeAndCommit("DELETE FROM tell")
 
+    def deleteAllThingiverseRefs(self):
+        self.executeAndCommit("DELETE FROM thingiverseRefs")
