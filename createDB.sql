@@ -59,4 +59,4 @@ CREATE TABLE `version` (
   `timestamp` datetime DEFAULT NULL
 );
 
-INSERT INTO version (version, timestamp) VALUES (3, CURRENT_TIMESTAMP);
+INSERT INTO version (version, timestamp) VALUES (4, CURRENT_TIMESTAMP);
