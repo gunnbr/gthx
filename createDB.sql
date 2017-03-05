@@ -19,6 +19,8 @@ CREATE TABLE `factoids` (
   PRIMARY KEY (`id`)
 );
 
+# Add locked botsnack and botsmack factoids?
+
 CREATE TABLE `seen` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(30) DEFAULT NULL,
@@ -38,13 +40,6 @@ CREATE TABLE `tell` (
   PRIMARY KEY (`id`)
 );
 
-CREATE TABLE `version` (
-  `version` int(11) NOT NULL,
-  `timestamp` datetime DEFAULT NULL
-);
-
-INSERT INTO version (version, timestamp) VALUES (2, CURRENT_TIMESTAMP);
-
 CREATE TABLE `refs` (
   `item` varchar(255) NOT NULL,
   `count` int(11) NOT NULL,
@@ -59,4 +54,9 @@ CREATE TABLE `thingiverseRefs` (
   PRIMARY KEY (`item`)
 );
 
-# Add locked botsnack and botsmack factoids?
+CREATE TABLE `version` (
+  `version` int(11) NOT NULL,
+  `timestamp` datetime DEFAULT NULL
+);
+
+INSERT INTO version (version, timestamp) VALUES (3, CURRENT_TIMESTAMP);
