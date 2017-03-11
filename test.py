@@ -235,7 +235,7 @@ class DbAccessFactoidTest(unittest.TestCase):
         user="someuser"
         user2="someotheruser"
         user3="someguy"
-        item="somefactoid"
+        item="somefactoidToReplace"
         isAre=True
         definition="a good thing to talk about"
         definition2="something people write"
@@ -297,7 +297,7 @@ class DbAccessFactoidTest(unittest.TestCase):
         user="someuser"
         user2="someotheruser"
         user3="someguy"
-        item="somefactoid"
+        item="somefactoidToForget"
         isAre=True
         definition="a good thing to talk about"
         definition2="something people write"
@@ -316,7 +316,7 @@ class DbAccessFactoidTest(unittest.TestCase):
 
     def test_forget_factoid_that_doesnt_exist(self):
         user="someuser"
-        item="somefactoid"
+        item="somefactoidThatIsntHere"
         
         wasDeleted = self.db.forgetFactoid(item, user)
         self.assertFalse(wasDeleted, "Incorrect return value from forgetFactoid")
@@ -578,11 +578,11 @@ class DbAccessFactoidTest(unittest.TestCase):
         # Verify that there are 3 info entries
         self.assertEqual(len(info), 3, "Factoid doesn't have the correct amount of info")
 
-        # Verify that the first entry correctly specifies the first add
+        # Verify that the first entry correctly specifies the forget
         history = info[0]
         self.assertEqual(history[1], item, "Factoid history has the wrong item name")
-        self.assertEqual(history[2], definition, "Factoid history has the wrong definition: '%s'" % history[2])
-        self.assertEqual(history[3], user, "Factoid history has the wrong username")
+        self.assertIsNone(history[2], "Factoid history has the wrong definition: '%s'" % history[2])
+        self.assertEqual(history[3], userWhoDeletes, "Factoid history has the wrong username")
         delta = datetime.now() - history[4]
         self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
         self.assertIsNone(history[5], "Factoid history ref count has an item name when it shouldn't.")
@@ -600,11 +600,11 @@ class DbAccessFactoidTest(unittest.TestCase):
         self.assertIsNone(history[6], "Factoid history has a count when it shouldn't")
         self.assertIsNone(history[7], "Factoid history has a last referenced time when it shouldn't.")
 
-        # Verify that the third entry correctly specifies the forget
+        # Verify that the third entry correctly specifies the first add
         history = info[2]
         self.assertEqual(history[1], item, "Factoid history has the wrong item name")
-        self.assertIsNone(history[2], "Factoid history for forgotten entry has a definition when it shouldn't")
-        self.assertEqual(history[3], userWhoDeletes, "Factoid history for forgotten entry has the wrong username")
+        self.assertEqual(history[2], definition, "Factoid history for forgotten entry has a definition when it shouldn't")
+        self.assertEqual(history[3], user, "Factoid history for forgotten entry has the wrong username")
         delta = datetime.now() - history[4]
         self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
         self.assertIsNone(history[5], "Factoid history ref count has an item name when it shouldn't.")
@@ -638,44 +638,44 @@ class DbAccessFactoidTest(unittest.TestCase):
         self.assertTrue(info, "Factoid has no info when it should.")
         self.assertEqual(len(info), 4, "Factoid doesn't have the correct amount of info")
 
-        # Verify that the first entry correctly specifies the first add
+        # Verify that the first entry correctly specifies the overwrite
         history = info[0]
         self.assertEqual(history[1], item, "Factoid history has the wrong item name")
-        self.assertEqual(history[2], definition, "Factoid history has the wrong definition: '%s'" % history[2])
-        self.assertEqual(history[3], user, "Factoid history has the wrong username")
+        self.assertEqual(history[2], definition3, "Factoid history has wrong definition: '%s'" % history[2])
+        self.assertEqual(history[3], user3, "Factoid history has the wrong username")
         delta = datetime.now() - history[4]
         self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
         self.assertIsNone(history[5], "Factoid history ref count has an item name when it shouldn't.")
         self.assertIsNone(history[6], "Factoid history has a count when it shouldn't")
         self.assertIsNone(history[7], "Factoid history has a last referenced time when it shouldn't.")
         
-        # Verify that the second entry correctly specifies the second add
+        # Verify that the second entry correctly specifies a forget (trigger by the overwrite)
         history = info[1]
         self.assertEqual(history[1], item, "Factoid history has the wrong item name")
-        self.assertEqual(history[2], definition2, "Factoid history has the wrong definition: '%s'" % history[2])
-        self.assertEqual(history[3], user2, "Factoid history has the wrong username")
+        self.assertIsNone(history[2], "Factoid history has the definition when it shouldn't: '%s'" % history[2])
+        self.assertEqual(history[3], user3, "Factoid history has the wrong username")
         delta = datetime.now() - history[4]
         self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
         self.assertIsNone(history[5], "Factoid history ref count has an item name when it shouldn't.")
         self.assertIsNone(history[6], "Factoid history has a count when it shouldn't")
         self.assertIsNone(history[7], "Factoid history has a last referenced time when it shouldn't.")
 
-        # Verify that the third entry correctly specifies the forget
+        # Verify that the third entry correctly specifies the second add
         history = info[2]
         self.assertEqual(history[1], item, "Factoid history has the wrong item name")
-        self.assertIsNone(history[2], "Factoid history for forgotten entry has a definition when it shouldn't")
-        self.assertEqual(history[3], user3, "Factoid history for forgotten entry has the wrong username")
+        self.assertEqual(history[2], definition2, "Factoid history has a definition: %s" % history[2])
+        self.assertEqual(history[3], user2, "Factoid history for forgotten entry has the wrong username")
         delta = datetime.now() - history[4]
         self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
         self.assertIsNone(history[5], "Factoid history ref count has an item name when it shouldn't.")
         self.assertIsNone(history[6], "Factoid history has a count when it shouldn't")
         self.assertIsNone(history[7], "Factoid history has a last referenced time when it shouldn't.")
 
-        # Verify that the fourth entry correctly specifies the overwrite add
+        # Verify that the fourth entry correctly specifies the first add
         history = info[3]
         self.assertEqual(history[1], item, "Factoid history has the wrong item name")
-        self.assertEqual(history[2], definition3, "Factoid history has the wrong definition: '%s'" % history[2])
-        self.assertEqual(history[3], user3, "Factoid history has the wrong username")
+        self.assertEqual(history[2], definition, "Factoid history has the wrong definition: '%s'" % history[2])
+        self.assertEqual(history[3], user, "Factoid history has the wrong username")
         delta = datetime.now() - history[4]
         self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
         self.assertIsNone(history[5], "Factoid history ref count has an item name when it shouldn't.")
@@ -902,6 +902,53 @@ class DbAccessThingiverseTest(unittest.TestCase):
         
     def tearDown(self):
         self.db.deleteAllThingiverseRefs()
+
+class DbAccessYoutubeRefTest(unittest.TestCase):
+    
+    def setUp(self):
+        dbuser = os.getenv("GTHX_MYSQL_USER")
+        if not dbuser:
+            raise ValueError("No username specified. Have you set GTHX_MYSQL_USER?")
+
+        dbpassword = os.getenv("GTHX_MYSQL_PASSWORD")
+        if not dbpassword:
+            raise ValueError("No password specified. Have you set GTHX_MYSQL_PASSWORD?")
+
+        dbname = os.getenv("GTHX_MYSQL_DATABASE")
+        if not dbname:
+            raise ValueError("No database specified. Have you set GTHX_MYSQL_DATABASE?")
+
+        self.db = DbAccess(dbuser, dbpassword, dbname)
+
+    def test_thingiverse_res(self):
+        testItem = "I7nVrT00ST4"
+        testTitle = "Pro Riders Laughing"
+        
+        # Verify that referencing an item the first time causes the ref count to
+        # be set to 1
+        rows = self.db.addYoutubeRef(testItem)
+        self.assertEquals(len(rows), 1, "First youtube ref returned the wrong number of rows.")
+        data = rows[0]
+        self.assertEquals(data[0], 1, "First youtube ref returned wrong number of references.")
+        self.assertIsNone(data[1], "First youtube ref returned a title when it shouldn't have.")
+
+        rows = self.db.addYoutubeRef(testItem)
+        self.assertEquals(len(rows), 1, "First youtube ref returned the wrong number of rows.")
+        data = rows[0]
+        self.assertEquals(data[0], 2, "Second youtube ref returned wrong number of references.")
+        self.assertIsNone(data[1], "Second youtube ref returned a title when it shouldn't have.")
+
+        self.db.addYoutubeTitle(testItem, testTitle)
+        
+        rows = self.db.addYoutubeRef(testItem)
+        self.assertEquals(len(rows), 1, "First youtube ref returned the wrong number of rows.")
+        data = rows[0]
+        self.assertEquals(data[0], 3, "Third youtube ref returned wrong number of references.")
+        self.assertEquals(data[1], testTitle, "Third youtube ref returned the wrong title: '%s'" % data[1])
+        
+    def tearDown(self):
+        self.db.deleteAllYoutubeRefs()
+        #print "Skipping youtubeRefs teardown"
 
 if __name__ == '__main__':
     unittest.main()
