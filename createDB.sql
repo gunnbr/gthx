@@ -3,7 +3,7 @@ CREATE TABLE `factoid_history` (
   `item` varchar(255) DEFAULT NULL,
   `value` varchar(512) DEFAULT NULL,
   `nick` varchar(30) DEFAULT NULL,
-  `dateset` datetime DEFAULT NULL,
+  `dateset` datetime(6) DEFAULT NULL,
   PRIMARY KEY (`id`)
 );
 
@@ -49,6 +49,15 @@ CREATE TABLE `refs` (
 
 CREATE TABLE `thingiverseRefs` (
   `item` int(11) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `count` int(11) NOT NULL,
+  `lastreferenced` datetime DEFAULT NULL,
+  PRIMARY KEY (`item`)
+);
+
+CREATE TABLE `youtubeRefs` (
+  `item` varchar(255) NOT NULL,
+  `title` varchar(255) DEFAULT NULL,
   `count` int(11) NOT NULL,
   `lastreferenced` datetime DEFAULT NULL,
   PRIMARY KEY (`item`)
@@ -59,4 +68,4 @@ CREATE TABLE `version` (
   `timestamp` datetime DEFAULT NULL
 );
 
-INSERT INTO version (version, timestamp) VALUES (4, CURRENT_TIMESTAMP);
+INSERT INTO version (version, timestamp) VALUES (5, CURRENT_TIMESTAMP);

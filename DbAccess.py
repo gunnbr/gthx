@@ -125,7 +125,7 @@ class DbAccess():
             self.forgetFactoid(item, nick)
 
         self.executeAndCommit("INSERT INTO factoids (item,are,value,nick,dateset) VALUES (%s,%s,%s,%s,NOW())", item,are,value,nick)
-        self.executeAndCommit("INSERT INTO factoid_history (item,value,nick,dateset) VALUES (%s,%s,%s,NOW())", item,value,nick);
+        self.executeAndCommit("INSERT INTO factoid_history (item,value,nick,dateset) VALUES (%s,%s,%s,NOW(6))", item,value,nick);
         return True
 
     def forgetFactoid(self, item, nick):
@@ -138,7 +138,7 @@ class DbAccess():
         itemsDeleted = self.executeAndCommit("DELETE FROM factoids WHERE item=%s", item)
         if itemsDeleted > 0:
             forgotten = True
-            self.executeAndCommit("INSERT INTO factoid_history (item,value,nick,dateset) VALUES (%s,Null,%s,NOW())", item,nick);
+            self.executeAndCommit("INSERT INTO factoid_history (item,value,nick,dateset) VALUES (%s,Null,%s,NOW(6))", item,nick);
         return forgotten
         
     def getFactoid(self,item):
@@ -159,19 +159,27 @@ class DbAccess():
         self.executeAndCommit("INSERT INTO tell (author, recipient, timestamp, message, inTracked) VALUES (%s,%s,NOW(),%s,%s)", author, recipient, message, inTracked);
         return True
 
-    def getTell(self,recipient):
+    def getTell(self, recipient):
         rows = self.executeAndFetchAll("SELECT * FROM tell WHERE recipient=%s ORDER BY timestamp", recipient);
         if rows:
             self.executeAndCommit("DELETE FROM tell WHERE recipient=%s", recipient);
         return rows
 
-    def addThingiverseRef(self,item):
+    def addThingiverseRef(self, item):
         self.executeAndCommit("INSERT INTO thingiverseRefs (item, count, lastreferenced) VALUES(%s, 1, NOW()) ON DUPLICATE KEY UPDATE count=count+1", item);
         rows = self.executeAndFetchAll("SELECT count FROM thingiverseRefs WHERE item=%s", item);
         if rows:
             # First row, first item contains the result
             return int(rows[0][0])
         return 0
+
+    def addYoutubeRef(self, item):
+        self.executeAndCommit("INSERT INTO youtubeRefs (item, count, lastreferenced) VALUES(%s, 1, NOW()) ON DUPLICATE KEY UPDATE count=count+1", item);
+        rows = self.executeAndFetchAll("SELECT count,title FROM youtubeRefs WHERE item=%s", item);
+        return rows
+
+    def addYoutubeTitle(self, item, title):
+        self.executeAndCommit("UPDATE youtubeRefs SET title=%s where item=%s", title, item)
 
     def mood(self):
         rows = self.executeAndFetchAll("""SELECT botsnack - botsmack as mood
@@ -206,3 +214,6 @@ class DbAccess():
 
     def deleteAllThingiverseRefs(self):
         self.executeAndCommit("DELETE FROM thingiverseRefs")
+
+    def deleteAllYoutubeRefs(self):
+        self.executeAndCommit("DELETE FROM youtubeRefs")
