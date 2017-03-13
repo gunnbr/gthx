@@ -1,5 +1,7 @@
 from version 4 to 5:
 
-Add youtubeRefs
-Update factoid_history dateset type to datetime(6)
-Update thingiverseRefs to include title
+1) Add youtubeRefs
+2) Update factoid_history dateset type to datetime(6)
+   ALTER TABLE factoid_history MODIFY dateset datetime(6);
+3) Update thingiverseRefs to include title
+   ALTER TABLE thingiverseRefs ADD COLUMN `title` varchar(255) NOT NULL AFTER item;
