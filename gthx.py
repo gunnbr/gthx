@@ -13,7 +13,7 @@ from twisted.internet import reactor, protocol, error
 from twisted.python import log
 from twisted.web.client import Agent
 from twisted.web.http_headers import Headers
-from twisted.internet.protocol import Protocol
+from twisted.protocols.basic import LineOnlyReceiver
 from twisted.internet.defer import Deferred
 
 # system imports
@@ -22,29 +22,38 @@ import traceback
 import urllib
 
 from datetime import datetime
+
 from DbAccess import DbAccess
 from DbAccess import Seen
 from DbAccess import Tell
 
 from Email import Email
 
-VERSION = "gthx version 0.22 2017-03-04"
+from pprint import pprint
+
+VERSION = "gthx version 0.23 2017-03-12"
 trackednick = ""
 channel = ""
 mynick = ""
 
 
-class TitleParser(Protocol):
+def unescape(htmlString):
+    return htmlString.replace("&quot;","\"").replace("&gt;","<").replace("&lt;","<").replace("&apos;","'").replace("&amp;", "&")
+
+class TitleParser(LineOnlyReceiver):
         def __init__(self, finished):
             self.title = None
             self.finished = finished
-            self.titleQuery = re.compile("<title>(.*) - Thingiverse<\/title>", re.IGNORECASE | re.MULTILINE)
+            self.delimiter='\n'
+            self.titleQuery = re.compile("<title>(.*) - .*<\/title>", re.IGNORECASE | re.MULTILINE)
 
-        def dataReceived(self, bytes):
-            match = self.titleQuery.search(bytes)
+        def lineReceived(self, line):
+            if not line: return
+            match = self.titleQuery.search(line)
             if match:
                 self.title = match.group(1)
                 print "Got title of: ", self.title
+                self.loseConnection()
                 
         def connectionLost(self, reason):
             print 'Finished receiving body:', reason.getErrorMessage()
@@ -119,6 +128,7 @@ class Gthx(irc.IRCClient):
         self.factoidSet = re.compile("(.+?)\s(is|are)(\salso)?\s(.+)")
         self.googleQuery = re.compile("\s*google\s+(.*?)\s+for\s+([a-zA-Z\*_\\\[\]\{\}^`|\*][a-zA-Z0-9\*_\\\[\]\{\}^`|-]*)")
         self.thingMention = re.compile("http(s)?:\/\/www.thingiverse.com\/thing:(\d+)", re.IGNORECASE)
+        self.youtubeMention = re.compile("http(s)?:\/\/www.youtube.com\/watch\?v=(\w*)", re.IGNORECASE)
         self.uptimeStart = datetime.now()
         self.lurkerReplyChannel = ""
         if os.getenv("GTHX_NICKSERV_PASSWORD"):
@@ -589,6 +599,7 @@ class Gthx(irc.IRCClient):
                     None)
                 def titleResponse(title):
                     if title:
+                        title = unescape(title)
                         print "The title for thing %s is: %s " % (thingId, title)
                         reply = 'http://www.thingiverse.com/thing:%s => %s => %s IRC mentions' % (thingId, title, refs)
                         self.msg(replyChannel, reply)
@@ -609,6 +620,54 @@ class Gthx(irc.IRCClient):
             
                 titleQuery.addCallback(queryResponse)
 
+        # Check for youtube mention
+        if canReply:
+            match = self.youtubeMention.search(parseMsg)
+            if match:
+                youtubeId = match.group(2)
+                print "Match for youtube query item %s" % youtubeId
+                rows = self.db.addYoutubeRef(youtubeId)
+                refs = int(rows[0][0])
+                title = rows[0][1]
+                if title is None:
+                    print "Attemping to get title for youtubeId %s" % youtubeId
+                    agent = Agent(reactor)
+                    titleQuery = agent.request(
+                        'GET',
+                        'https://www.youtube.com/watch?v=%s' % youtubeId,
+                        Headers({'User-Agent': ['gthx IRC bot']}),
+                        None)
+                    def titleResponse(title):
+                        if title:
+                            title = unescape(title)
+                            self.db.addYoutubeTitle(youtubeId, title)
+                            print "The title for video %s is: %s " % (youtubeId, title)
+                            reply = 'http://www.youtube.com/watch?v=%s => %s => %s IRC mentions' % (youtubeId, title, refs)
+                            print "Reply is: %s" % reply
+                            self.msg(replyChannel, reply)
+                            print "Message sent."
+                        else:
+                            print "No title found for youtube video %s" % (youtubeId)
+                            reply = 'http://www.youtube.com/watch?v=%s => ???? => %s IRC mentions' % (youtubeId, refs)
+                            self.msg(replyChannel, reply)
+                    
+                    def queryResponse(response):
+                        if response.code == 200:
+                            finished = Deferred()
+                            finished.addCallback(titleResponse)
+                            response.deliverBody(TitleParser(finished))
+                            return finished
+                        print "Got error response from youtube query: %s:%s" % (response.code, response.phrase)
+                        pprint(list(response.headers.getAllRawHeaders()))
+                        titleResponse(None)
+                        return None
+            
+                    titleQuery.addCallback(queryResponse)
+                else:
+                    print "Already have a title for item %s: %s" % (youtubeId, title)
+                    reply = 'http://www.youtube.com/watch?v=:%s => %s => %s IRC mentions' % (youtubeId, title, refs)
+                    self.msg(replyChannel, reply)
+                
     def action(self, sender, channel, message):
         m = re.match("([a-zA-Z\*_\\\[\]\{\}^`|\*][a-zA-Z0-9\*_\\\[\]\{\}^`|-]*)", sender)
         if m:
