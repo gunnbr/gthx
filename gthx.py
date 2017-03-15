@@ -31,14 +31,14 @@ from Email import Email
 
 from pprint import pprint
 
-VERSION = "gthx version 0.23 2017-03-12"
+VERSION = "gthx version 0.23 2017-03-14"
 trackednick = ""
 channel = ""
 mynick = ""
 
 
 def unescape(htmlString):
-    return htmlString.replace("&quot;","\"").replace("&gt;","<").replace("&lt;","<").replace("&apos;","'").replace("&amp;", "&")
+    return htmlString.replace("&quot;","\"").replace("&gt;","<").replace("&lt;","<").replace("&apos;","'").replace("&amp;","&")
 
 class TitleParser(LineOnlyReceiver):
         def __init__(self, finished):
@@ -590,35 +590,44 @@ class Gthx(irc.IRCClient):
             if match:
                 thingId = int(match.group(2))
                 print "Match for thingiverse query item %s" % thingId
-                refs = self.db.addThingiverseRef(thingId)
-                agent = Agent(reactor)
-                titleQuery = agent.request(
-                    'GET',
-                    'http://www.thingiverse.com/thing:%s' % thingId,
-                    Headers({'User-Agent': ['gthx IRC bot']}),
-                    None)
-                def titleResponse(title):
-                    if title:
-                        title = unescape(title)
-                        print "The title for thing %s is: %s " % (thingId, title)
-                        reply = 'http://www.thingiverse.com/thing:%s => %s => %s IRC mentions' % (thingId, title, refs)
-                        self.msg(replyChannel, reply)
-                    else:
-                        print "No title found for thing %s" % (thingId)
-                        reply = 'http://www.thingiverse.com/thing:%s => ???? => %s IRC mentions' % (thingId, refs)
-                        self.msg(replyChannel, reply)
+                rows = self.db.addThingiverseRef(thingId)
+                refs = int(rows[0][0])
+                title = rows[0][1]
+                if title is None:
+                    print "Attemping to get title for thingiverse ID %s" % thingId
+                    agent = Agent(reactor)
+                    titleQuery = agent.request(
+                        'GET',
+                        'http://www.thingiverse.com/thing:%s' % thingId,
+                        Headers({'User-Agent': ['gthx IRC bot']}),
+                        None)
+                    def titleResponse(title):
+                        if title:
+                            title = unescape(title)
+                            self.db.addThingiverseTitle(thingId, title)
+                            print "The title for thing %s is: %s " % (thingId, title)
+                            reply = 'http://www.thingiverse.com/thing:%s => %s => %s IRC mentions' % (thingId, title, refs)
+                            self.msg(replyChannel, reply)
+                        else:
+                            print "No title found for thing %s" % (thingId)
+                            reply = 'http://www.thingiverse.com/thing:%s => ???? => %s IRC mentions' % (thingId, refs)
+                            self.msg(replyChannel, reply)
                     
-                def queryResponse(response):
-                    if response.code == 200:
-                        finished = Deferred()
-                        finished.addCallback(titleResponse)
-                        response.deliverBody(TitleParser(finished))
-                        return finished
-                    print "Got error response from thingiverse query: %s" % (response)
-                    titleResponse(None)
-                    return None
+                    def queryResponse(response):
+                        if response.code == 200:
+                            finished = Deferred()
+                            finished.addCallback(titleResponse)
+                            response.deliverBody(TitleParser(finished))
+                            return finished
+                        print "Got error response from thingiverse query: %s" % (response)
+                        titleResponse(None)
+                        return None
             
-                titleQuery.addCallback(queryResponse)
+                    titleQuery.addCallback(queryResponse)
+                else:
+                    print "Already have a title for thing %s: %s" % (thingId, title)
+                    reply = 'http://www.thingiverse.com/thing:%s => %s => %s IRC mentions' % (thingId, title, refs)
+                    self.msg(replyChannel, reply)
 
         # Check for youtube mention
         if canReply:
