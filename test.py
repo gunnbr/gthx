@@ -886,19 +886,35 @@ class DbAccessThingiverseTest(unittest.TestCase):
 
         self.db = DbAccess(dbuser, dbpassword, dbname)
 
-    def test_thingiverse_res(self):
+    def test_thingiverse_refs(self):
         testItem = 1234
+        testTitle = "The most wonderful thing in the world"
+        
+        rows = self.db.addThingiverseRef(testItem)
+        self.assertEquals(len(rows), 1, "First thingiverse ref returned the wrong number of rows.")
+        data = rows[0]
+        self.assertEquals(data[0], 1, "First thingiverse ref returned wrong number of references.")
+        self.assertIsNone(data[1], "First thingiverse ref returned a title when it shouldn't have.")
 
-        # Verify that referencing an item the first time causes the ref count to
-        # be set to 1
-        refs = self.db.addThingiverseRef(testItem)
-        self.assertEquals(refs, 1, "First thingiverse item returned wrong number of references.")
+        rows = self.db.addThingiverseRef(testItem)
+        self.assertEquals(len(rows), 1, "Second thingiverse ref returned the wrong number of rows.")
+        data = rows[0]
+        self.assertEquals(data[0], 2, "Second thingiverse ref returned wrong number of references.")
+        self.assertIsNone(data[1], "Second thingiverse ref returned a title when it shouldn't have.")
 
-        refs = self.db.addThingiverseRef(testItem)
-        self.assertEquals(refs, 2, "Second thingiverse item returned wrong number of references.")
+        rows = self.db.addThingiverseRef(testItem)
+        self.assertEquals(len(rows), 1, "Third thingiverse ref returned the wrong number of rows.")
+        data = rows[0]
+        self.assertEquals(data[0], 3, "Third thingiverse ref returned wrong number of references.")
+        self.assertIsNone(data[1], "Third thingiverse ref returned a title when it shouldn't have.")
 
-        refs = self.db.addThingiverseRef(testItem)
-        self.assertEquals(refs, 3, "Third thingiverse item returned wrong number of references.")
+        self.db.addThingiverseTitle(testItem, testTitle)
+        
+        rows = self.db.addThingiverseRef(testItem)
+        self.assertEquals(len(rows), 1, "Fourth thingiverse ref returned the wrong number of rows.")
+        data = rows[0]
+        self.assertEquals(data[0], 4, "Fourth thingiverse ref returned wrong number of references.")
+        self.assertEquals(data[1], testTitle, "Fourth thingiverse ref returned the wrong title.")
         
     def tearDown(self):
         self.db.deleteAllThingiverseRefs()
@@ -920,7 +936,7 @@ class DbAccessYoutubeRefTest(unittest.TestCase):
 
         self.db = DbAccess(dbuser, dbpassword, dbname)
 
-    def test_thingiverse_res(self):
+    def test_youtube_refs(self):
         testItem = "I7nVrT00ST4"
         testTitle = "Pro Riders Laughing"
         

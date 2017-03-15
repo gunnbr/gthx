@@ -167,11 +167,11 @@ class DbAccess():
 
     def addThingiverseRef(self, item):
         self.executeAndCommit("INSERT INTO thingiverseRefs (item, count, lastreferenced) VALUES(%s, 1, NOW()) ON DUPLICATE KEY UPDATE count=count+1", item);
-        rows = self.executeAndFetchAll("SELECT count FROM thingiverseRefs WHERE item=%s", item);
-        if rows:
-            # First row, first item contains the result
-            return int(rows[0][0])
-        return 0
+        rows = self.executeAndFetchAll("SELECT count,title FROM thingiverseRefs WHERE item=%s", item);
+        return rows
+
+    def addThingiverseTitle(self, item, title):
+        self.executeAndCommit("UPDATE thingiverseRefs SET title=%s where item=%s", title, item)
 
     def addYoutubeRef(self, item):
         self.executeAndCommit("INSERT INTO youtubeRefs (item, count, lastreferenced) VALUES(%s, 1, NOW()) ON DUPLICATE KEY UPDATE count=count+1", item);

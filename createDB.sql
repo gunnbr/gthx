@@ -49,7 +49,7 @@ CREATE TABLE `refs` (
 
 CREATE TABLE `thingiverseRefs` (
   `item` int(11) NOT NULL,
-  `title` varchar(255) NOT NULL,
+  `title` varchar(255) DEFAULT NULL,
   `count` int(11) NOT NULL,
   `lastreferenced` datetime DEFAULT NULL,
   PRIMARY KEY (`item`)
