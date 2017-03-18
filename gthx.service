@@ -3,9 +3,8 @@ Description=gthx IRC bot
 
 [Service]
 Type=simple
-EnvironmentFile=/etc/default/gthx
 Restart=on-failure
-ExecStart=/usr/sbin/gthx/gthx.py
+ExecStart=/usr/sbin/gthx/gthx.py gthx
 
 [Install]
 WantedBy=multi-user.target

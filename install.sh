@@ -3,7 +3,9 @@ echo -n Stopping gthx service...
 sudo systemctl stop gthx
 echo Done.
 sudo cp gthx.service /lib/systemd/system/gthx.service
-sudo cp gthx-environment.local /etc/default/gthx
+sudo mkdir -p /etc/gthx
+sudo cp gthx.config.local /etc/gthx/gthx.config
+sudo chmod a-r /etc/gthx/gthx.config
 sudo systemctl daemon-reload
 sudo mkdir -p /usr/sbin/gthx
 sudo cp gthx.py /usr/sbin/gthx/

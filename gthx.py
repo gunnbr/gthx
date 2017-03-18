@@ -20,6 +20,7 @@ from twisted.internet.defer import Deferred
 import time, sys, re, os
 import traceback
 import urllib
+import ConfigParser
 
 from datetime import datetime
 
@@ -31,7 +32,7 @@ from Email import Email
 
 from pprint import pprint
 
-VERSION = "gthx version 0.23 2017-03-14"
+VERSION = "gthx version 0.24 2017-03-XX"
 trackednick = ""
 channel = ""
 mynick = ""
@@ -41,23 +42,23 @@ def unescape(htmlString):
     return htmlString.replace("&quot;","\"").replace("&gt;","<").replace("&lt;","<").replace("&apos;","'").replace("&amp;","&")
 
 class TitleParser(LineOnlyReceiver):
-        def __init__(self, finished):
-            self.title = None
-            self.finished = finished
-            self.delimiter='\n'
-            self.titleQuery = re.compile("<title>(.*) - .*<\/title>", re.IGNORECASE | re.MULTILINE)
+    def __init__(self, finished):
+        self.title = None
+        self.finished = finished
+        self.delimiter='\n'
+        self.titleQuery = re.compile("<title>(.*) - .*<\/title>", re.IGNORECASE | re.MULTILINE)
 
-        def lineReceived(self, line):
-            if not line: return
-            match = self.titleQuery.search(line)
-            if match:
-                self.title = match.group(1)
-                print "Got title of: ", self.title
-                self.loseConnection()
+    def lineReceived(self, line):
+        if not line: return
+        match = self.titleQuery.search(line)
+        if match:
+            self.title = match.group(1)
+            print "Got title of: ", self.title
+            self.loseConnection()
                 
-        def connectionLost(self, reason):
-            print 'Finished receiving body:', reason.getErrorMessage()
-            self.finished.callback(self.title)
+    def connectionLost(self, reason):
+        print 'Finished receiving body:', reason.getErrorMessage()
+        self.finished.callback(self.title)
             
 def timesincestring(firsttime):
         since = datetime.now() - firsttime
@@ -103,21 +104,12 @@ class Gthx(irc.IRCClient):
     
     restring = ""
 
-    def __init__(self):
-        dbuser = os.getenv("GTHX_MYSQL_USER")
-        if not dbuser:
-            raise ValueError("No username specified. Have you set GTHX_MYSQL_USER?")
-
-        dbpassword = os.getenv("GTHX_MYSQL_PASSWORD")
-        if not dbpassword:
-            raise ValueError("No password specified. Have you set GTHX_MYSQL_PASSWORD?")
-
-        dbname = os.getenv("GTHX_MYSQL_DATABASE")
-        if not dbname:
-            raise ValueError("No database specified. Have you set GTHX_MYSQL_DATABASE?")
-
-        self.db = DbAccess(dbuser, dbpassword, dbname)
-
+    def __init__(self, dbUser, dbPassword, dbDatabase, nickservPassword):
+        self.db = DbAccess(dbUser, dbPassword, dbDatabase)
+        # Just setting this variable sets the nickserv login password
+        # (Maybe? We still do our own procesing later)
+        self.password = nickservPassword
+        
         print "Connected to MySQL server"
         
         self.trackedpresent = dict()
@@ -131,17 +123,13 @@ class Gthx(irc.IRCClient):
         self.youtubeMention = re.compile("http(s)?:\/\/www.youtube.com\/watch\?v=(\w*)", re.IGNORECASE)
         self.uptimeStart = datetime.now()
         self.lurkerReplyChannel = ""
-        if os.getenv("GTHX_NICKSERV_PASSWORD"):
-            self.log("Setting nickserv password")
-            # Just setting this variable sets the nickserv login password
-            self.password = os.getenv("GTHX_NICKSERV_PASSWORD")
 
     def connectionMade(self):
-        if (self.password == None):
-            self.log("IRC Connection made - no nickserv password")
-        else:
+        if self.password:
             self.log("IRC Connection made -- sending CAP REQ")
             self.sendLine('CAP REQ :sasl')
+        else:
+            self.log("IRC Connection made - no nickserv password")
         irc.IRCClient.connectionMade(self)
 
     def irc_CAP(self, prefix, params):
@@ -690,16 +678,20 @@ class GthxFactory(protocol.ClientFactory):
     A new protocol instance will be created each time we connect to the server.
     """
 
-    def __init__(self, channels, nick, emailClient):
+    def __init__(self, channels, nick, emailClient, dbUser, dbPassword, dbDatabase, nickservPassword):
         self.channels = channels
         self.emailClient = emailClient
         self.nick = nick
+        self.dbUser = dbUser
+        self.dbPassword = dbPassword
+        self.dbDatabase = dbDatabase
+        self.nickservPassword = nickservPassword
         print "GthxFactory init"
         
     def buildProtocol(self, addr):
         print "GthxFactory build protocol"
         try:
-            p = Gthx()
+            p = Gthx(dbUser, dbPassword, dbDatabase, nickservPassword)
             p.factory = self
             p.emailClient = self.emailClient
             p.nickname = self.nick
@@ -723,10 +715,32 @@ class GthxFactory(protocol.ClientFactory):
 
 
 if __name__ == '__main__':
-    trackednick = os.getenv("GTHX_TRACKED_NICK")
-    channels = os.getenv("GTHX_CHANNELS")
-    mynick = os.getenv("GTHX_NICK")
+    if len(sys.argv) < 2:
+        raise SystemExit("gthx.py needs to be invoked with the bot name which is used to pick the config file")
     
+    if sys.argv[1] == 'test':
+        configFile = "./gthx.config.local"
+    else:
+        configFile = "/etc/gthx/%s.config" % sys.argv[1]
+        
+    config = ConfigParser.ConfigParser()
+    results = config.read(configFile)
+    if not results:
+        raise SystemExit("Failed to read config file '%s'" % (configFile))
+
+    try:
+        trackednick = config.get('IRC','GTHX_TRACKED_NICK')
+    except ConfigParser.NoOptionError:
+        trackednick = None
+
+    try:
+        nickservPassword = config.get("IRC", "GTHX_NICKSERV_PASSWORD")
+    except ConfigParser.NoOptionError:
+        nickservPassword = None
+
+    channels = config.get('IRC','GTHX_CHANNELS')
+    mynick = config.get('IRC','GTHX_NICK')
+
     logfile = "/tmp/%s.log" % mynick
 
     if (channels == None):
@@ -734,15 +748,26 @@ if __name__ == '__main__':
     elif (mynick == None):
         print "No nick specified. Did you set GTHX_NICK?"
     else:
+        emailClient = None
         try:
+            email_user = config.get("EMAIL", "GTHX_EMAIL_USER")
+            email_password = config.get("EMAIL", "GTHX_EMAIL_PASSWORD")
+            from_email = config.get("EMAIL", "GTHX_EMAIL_FROM")
+            to_email = config.get("EMAIL", "GTHX_EMAIL_TO")
+            email_server = config.get("EMAIL", "GTHX_EMAIL_SMTP_SERVER")
+            dbUser = config.get('MYSQL','GTHX_MYSQL_USER')
+            dbPassword = config.get('MYSQL','GTHX_MYSQL_PASSWORD')
+            dbDatabase = config.get('MYSQL','GTHX_MYSQL_DATABASE')
+    
+            
             # Setup email notification
-            emailClient = Email()
+            emailClient = Email(email_user, email_password, from_email, to_email, email_server)
 
             # initialize logging
             log.startLogging(open(logfile, 'a'))
 
             # create factory protocol and application
-            f = GthxFactory(channels, mynick, emailClient)
+            f = GthxFactory(channels, mynick, emailClient, dbUser, dbPassword, dbDatabase, nickservPassword)
 
             # connect factory to this host and port
             reactor.connectTCP("chat.freenode.net", 6667, f)
@@ -760,6 +785,7 @@ if __name__ == '__main__':
             print "Traceback: %s" % traceback.format_exc()
             message = "%s stopped due to an exception: %s\n\n" % (mynick, str(e))
             message += traceback.format_exc()
-            emailClient.send("%s exception" % mynick, message)
+            if emailClient:
+                emailClient.send("%s exception" % mynick, message)
             print "Waiting 5 minutes to retry..."
             # TODO: Add logging here

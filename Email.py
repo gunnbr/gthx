@@ -9,26 +9,12 @@ class Email():
     Provides methods to send email for notifications
     """
 
-    def __init__(self):
-        self.user = os.getenv("GTHX_EMAIL_USER")
-        if (self.user == None):
-            raise ValueError("No email username specified. Have you set GTHX_EMAIL_USER?")
-
-        self.password = os.getenv("GTHX_EMAIL_PASSWORD")
-        if (self.password == None):
-            raise ValueError("No email password specified. Have you set GTHX_EMAIL_PASSWORD?")
-
-        self.from_email = os.getenv("GTHX_EMAIL_FROM")
-        if (self.from_email == None):
-            raise ValueError("No email from specified. Have you set GTHX_EMAIL_FROM?")
-
-        self.to_email = os.getenv("GTHX_EMAIL_TO")
-        if (self.to_email == None):
-            raise ValueError("No email to specified. Have you set GTHX_EMAIL_TO?")
-
-        self.server = os.getenv("GTHX_EMAIL_SMTP_SERVER")
-        if (self.server == None):
-            raise ValueError("No SMTP server specified. Have you set GTHX_EMAIL_SMTP_SERVER?")
+    def __init__(self, user, password, from_email, to_email, server):
+        self.user = user
+        self.password = password
+        self.from_email = from_email
+        self.to_email = to_email
+        self.server = server
 
     def threadsend(self, subject, message):
         try:
