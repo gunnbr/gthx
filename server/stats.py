@@ -79,7 +79,7 @@ try:
     cur = con.cursor(mdb.cursors.DictCursor)
 
     if type == 'factoids':
-        query = "SELECT * FROM refs WHERE item NOT IN (\"botsnack\",\"botsmack\") "
+        query = "select factoids.item as item,GROUP_CONCAT(value SEPARATOR ' and also ') as value,count,lastreferenced from factoids join refs r on r.item=factoids.item WHERE r.item NOT IN (\"botsnack\",\"botsmack\") "
     elif type == 'thingiverse':
         query = "SELECT * FROM thingiverseRefs "
     else:
@@ -92,11 +92,14 @@ try:
             query += "WHERE "
         query += "lastreferenced BETWEEN DATE_SUB(NOW(), INTERVAL 30 DAY) AND NOW() "
 
+    if type == 'factoids':
+       query += " GROUP BY factoids.item "
+
     if order == 'date':
         query += "ORDER BY lastreferenced desc "
     else:
         query += "ORDER BY count desc, lastreferenced desc "
-        
+
     query += "LIMIT 20"
 
     cur.execute(query)
