@@ -118,7 +118,7 @@ class Gthx(irc.IRCClient):
         self.tellQuery = re.compile("\s*tell\s+([a-zA-Z\*_\\\[\]\{\}^`|\*][a-zA-Z0-9\*_\\\[\]\{\}^`|-]*)\s*(.+)")
         self.factoidQuery = re.compile("(.+)[?!](\s*$|\s*\|\s*([a-zA-Z\*_\\\[\]\{\}^`|\*][a-zA-Z0-9\*_\\\[\]\{\}^`|-]*)$)")
         self.factoidSet = re.compile("(.+?)\s(is|are)(\salso)?\s(.+)")
-        self.googleQuery = re.compile("(?i)gthx\s*google\s+(.*?)\s+for\s+([a-zA-Z\*_\\\[\]\{\}^`|\*][a-zA-Z0-9\*_\\\[\]\{\}^`|-]*)")
+        self.googleQuery = re.compile("\s*google\s+(.*?)\s+for\s+([a-zA-Z\*_\\\[\]\{\}^`|\*][a-zA-Z0-9\*_\\\[\]\{\}^`|-]*)")
         self.thingMention = re.compile("http(s)?:\/\/www.thingiverse.com\/thing:(\d+)", re.IGNORECASE)
         self.youtubeMention = re.compile("http(s)?:\/\/(www\.youtube\.com\/watch\?v=|youtu\.be\/)(\w*)", re.IGNORECASE)
         self.uptimeStart = datetime.now()
@@ -482,15 +482,16 @@ class Gthx(irc.IRCClient):
                 return
         
         # Check for google query
-        if canReply:
-            m = self.googleQuery.match(parseMsg)
-            if m:
-                queryname = urllib.quote_plus(m.group(1))
-                foruser = m.group(2)
-                print "%s asked to google '%s' for %s" % (user, queryname, foruser)
-                reply = "%s: http://lmgtfy.com/?q=%s" % (foruser, queryname)
-                self.msg(replyChannel, reply)
-                return
+        if directAddress:
+            if canReply:
+                m = self.googleQuery.match(parseMsg)
+                if m:
+                    queryname = urllib.quote_plus(m.group(1))
+                    foruser = m.group(2)
+                    print "%s asked to google '%s' for %s" % (user, queryname, foruser)
+                    reply = "%s: http://lmgtfy.com/?q=%s" % (foruser, queryname)
+                    self.msg(replyChannel, reply)
+                    return
         
         # Check for setting a factoid
         factoid = None
