@@ -482,15 +482,16 @@ class Gthx(irc.IRCClient):
                 return
         
         # Check for google query
-        if canReply:
-            m = self.googleQuery.match(parseMsg)
-            if m:
-                queryname = urllib.quote_plus(m.group(1))
-                foruser = m.group(2)
-                print "%s asked to google '%s' for %s" % (user, queryname, foruser)
-                reply = "%s: http://lmgtfy.com/?q=%s" % (foruser, queryname)
-                self.msg(replyChannel, reply)
-                return
+        if directAddress:
+            if canReply:
+                m = self.googleQuery.match(parseMsg)
+                if m:
+                    queryname = urllib.quote_plus(m.group(1))
+                    foruser = m.group(2)
+                    print "%s asked to google '%s' for %s" % (user, queryname, foruser)
+                    reply = "%s: http://lmgtfy.com/?q=%s" % (foruser, queryname)
+                    self.msg(replyChannel, reply)
+                    return
         
         # Check for setting a factoid
         factoid = None
