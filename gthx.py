@@ -662,7 +662,7 @@ class Gthx(irc.IRCClient):
                     titleQuery.addCallback(queryResponse)
                 else:
                     print "Already have a title for item %s: %s" % (youtubeId, title)
-                    reply = 'http://www.youtube.com/watch?v=:%s => %s => %s IRC mentions' % (youtubeId, title, refs)
+                    reply = 'http://www.youtube.com/watch?v=%s => %s => %s IRC mentions' % (youtubeId, title, refs)
                     self.msg(replyChannel, reply)
                 
     def action(self, sender, channel, message):
