@@ -120,7 +120,7 @@ class Gthx(irc.IRCClient):
         self.factoidSet = re.compile("(.+?)\s(is|are)(\salso)?\s(.+)")
         self.googleQuery = re.compile("\s*google\s+(.*?)\s+for\s+([a-zA-Z\*_\\\[\]\{\}^`|\*][a-zA-Z0-9\*_\\\[\]\{\}^`|-]*)")
         self.thingMention = re.compile("http(s)?:\/\/www.thingiverse.com\/thing:(\d+)", re.IGNORECASE)
-        self.youtubeMention = re.compile("http(s)?:\/\/(www\.youtube\.com\/watch\?v=|youtu\.be\/)(\w*)", re.IGNORECASE)
+        self.youtubeMention = re.compile("http(s)?:\/\/(www\.youtube\.com\/watch\?v=|youtu\.be\/)([\w\-]*)", re.IGNORECASE)
         self.uptimeStart = datetime.now()
         self.lurkerReplyChannel = ""
 
