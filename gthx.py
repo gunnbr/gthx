@@ -32,7 +32,7 @@ from Email import Email
 
 from pprint import pprint
 
-VERSION = "gthx version 0.25 2017-04-14 (special thanks to DJHenjin!)"
+VERSION = "gthx version 0.26 2017-06-11"
 trackednick = ""
 channel = ""
 mynick = ""
@@ -587,7 +587,7 @@ class Gthx(irc.IRCClient):
                     agent = Agent(reactor)
                     titleQuery = agent.request(
                         'GET',
-                        'http://www.thingiverse.com/thing:%s' % thingId,
+                        'https://www.thingiverse.com/thing:%s' % thingId,
                         Headers({'User-Agent': ['gthx IRC bot']}),
                         None)
                     def titleResponse(title):
@@ -595,11 +595,11 @@ class Gthx(irc.IRCClient):
                             title = unescape(title)
                             self.db.addThingiverseTitle(thingId, title)
                             print "The title for thing %s is: %s " % (thingId, title)
-                            reply = 'http://www.thingiverse.com/thing:%s => %s => %s IRC mentions' % (thingId, title, refs)
+                            reply = 'https://www.thingiverse.com/thing:%s => %s => %s IRC mentions' % (thingId, title, refs)
                             self.msg(replyChannel, reply)
                         else:
                             print "No title found for thing %s" % (thingId)
-                            reply = 'http://www.thingiverse.com/thing:%s => ???? => %s IRC mentions' % (thingId, refs)
+                            reply = 'https://www.thingiverse.com/thing:%s => ???? => %s IRC mentions' % (thingId, refs)
                             self.msg(replyChannel, reply)
                     
                     def queryResponse(response):
@@ -615,7 +615,7 @@ class Gthx(irc.IRCClient):
                     titleQuery.addCallback(queryResponse)
                 else:
                     print "Already have a title for thing %s: %s" % (thingId, title)
-                    reply = 'http://www.thingiverse.com/thing:%s => %s => %s IRC mentions' % (thingId, title, refs)
+                    reply = 'https://www.thingiverse.com/thing:%s => %s => %s IRC mentions' % (thingId, title, refs)
                     self.msg(replyChannel, reply)
 
         # Check for youtube mention
