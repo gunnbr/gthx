@@ -2,6 +2,7 @@
 import unittest
 import os
 import time
+import ConfigParser
 
 from DbAccess import DbAccess
 from DbAccess import Seen
@@ -16,19 +17,15 @@ class DbAccessSeenTest(unittest.TestCase):
     unicodemessage = "I love 🌮s"
     
     def setUp(self):
-        dbuser = os.getenv("GTHX_MYSQL_USER")
-        if not dbuser:
-            raise ValueError("No username specified. Have you set GTHX_MYSQL_USER?")
+        config = ConfigParser.ConfigParser()
+        results = config.read('gthx.config.local')
+        if not results:
+            raise SystemExit("Failed to read config file 'gthx.config.local'")
+        dbUser = config.get('MYSQL','GTHX_MYSQL_USER')
+        dbPassword = config.get('MYSQL','GTHX_MYSQL_PASSWORD')
+        dbName = config.get('MYSQL','GTHX_MYSQL_DATABASE')
 
-        dbpassword = os.getenv("GTHX_MYSQL_PASSWORD")
-        if not dbpassword:
-            raise ValueError("No password specified. Have you set GTHX_MYSQL_PASSWORD?")
-
-        dbname = os.getenv("GTHX_MYSQL_DATABASE")
-        if not dbname:
-            raise ValueError("No database specified. Have you set GTHX_MYSQL_DATABASE?")
-
-        self.db = DbAccess(dbuser, dbpassword, dbname)
+        self.db = DbAccess(dbUser, dbPassword, dbName)
 
     def test_missing_seen(self):
         data = self.db.seen(DbAccessSeenTest.missinguser)
@@ -159,19 +156,15 @@ class DbAccessSeenTest(unittest.TestCase):
 
 class DbAccessFactoidTest(unittest.TestCase):
     def setUp(self):
-        dbuser = os.getenv("GTHX_MYSQL_USER")
-        if not dbuser:
-            raise ValueError("No username specified. Have you set GTHX_MYSQL_USER?")
+        config = ConfigParser.ConfigParser()
+        results = config.read('gthx.config.local')
+        if not results:
+            raise SystemExit("Failed to read config file 'gthx.config.local'")
+        dbUser = config.get('MYSQL','GTHX_MYSQL_USER')
+        dbPassword = config.get('MYSQL','GTHX_MYSQL_PASSWORD')
+        dbName = config.get('MYSQL','GTHX_MYSQL_DATABASE')
 
-        dbpassword = os.getenv("GTHX_MYSQL_PASSWORD")
-        if not dbpassword:
-            raise ValueError("No password specified. Have you set GTHX_MYSQL_PASSWORD?")
-
-        dbname = os.getenv("GTHX_MYSQL_DATABASE")
-        if not dbname:
-            raise ValueError("No database specified. Have you set GTHX_MYSQL_DATABASE?")
-
-        self.db = DbAccess(dbuser, dbpassword, dbname)
+        self.db = DbAccess(dbUser, dbPassword, dbName)
 
     def test_get_missing_factoid(self):
         missingFactoid = "missingfactoid"
@@ -736,19 +729,15 @@ class DbAccessTellTest(unittest.TestCase):
     missinguser = "somerandomuser"
     
     def setUp(self):
-        dbuser = os.getenv("GTHX_MYSQL_USER")
-        if not dbuser:
-            raise ValueError("No username specified. Have you set GTHX_MYSQL_USER?")
+        config = ConfigParser.ConfigParser()
+        results = config.read('gthx.config.local')
+        if not results:
+            raise SystemExit("Failed to read config file 'gthx.config.local'")
+        dbUser = config.get('MYSQL','GTHX_MYSQL_USER')
+        dbPassword = config.get('MYSQL','GTHX_MYSQL_PASSWORD')
+        dbName = config.get('MYSQL','GTHX_MYSQL_DATABASE')
 
-        dbpassword = os.getenv("GTHX_MYSQL_PASSWORD")
-        if not dbpassword:
-            raise ValueError("No password specified. Have you set GTHX_MYSQL_PASSWORD?")
-
-        dbname = os.getenv("GTHX_MYSQL_DATABASE")
-        if not dbname:
-            raise ValueError("No database specified. Have you set GTHX_MYSQL_DATABASE?")
-
-        self.db = DbAccess(dbuser, dbpassword, dbname)
+        self.db = DbAccess(dbUser, dbPassword, dbName)
 
     def test_user_with_no_tells(self):
         user="someuser"
@@ -872,19 +861,15 @@ class DbAccessTellTest(unittest.TestCase):
 class DbAccessThingiverseTest(unittest.TestCase):
     
     def setUp(self):
-        dbuser = os.getenv("GTHX_MYSQL_USER")
-        if not dbuser:
-            raise ValueError("No username specified. Have you set GTHX_MYSQL_USER?")
+        config = ConfigParser.ConfigParser()
+        results = config.read('gthx.config.local')
+        if not results:
+            raise SystemExit("Failed to read config file 'gthx.config.local'")
+        dbUser = config.get('MYSQL','GTHX_MYSQL_USER')
+        dbPassword = config.get('MYSQL','GTHX_MYSQL_PASSWORD')
+        dbName = config.get('MYSQL','GTHX_MYSQL_DATABASE')
 
-        dbpassword = os.getenv("GTHX_MYSQL_PASSWORD")
-        if not dbpassword:
-            raise ValueError("No password specified. Have you set GTHX_MYSQL_PASSWORD?")
-
-        dbname = os.getenv("GTHX_MYSQL_DATABASE")
-        if not dbname:
-            raise ValueError("No database specified. Have you set GTHX_MYSQL_DATABASE?")
-
-        self.db = DbAccess(dbuser, dbpassword, dbname)
+        self.db = DbAccess(dbUser, dbPassword, dbName)
 
     def test_thingiverse_refs(self):
         testItem = 1234
@@ -922,19 +907,15 @@ class DbAccessThingiverseTest(unittest.TestCase):
 class DbAccessYoutubeRefTest(unittest.TestCase):
     
     def setUp(self):
-        dbuser = os.getenv("GTHX_MYSQL_USER")
-        if not dbuser:
-            raise ValueError("No username specified. Have you set GTHX_MYSQL_USER?")
+        config = ConfigParser.ConfigParser()
+        results = config.read('gthx.config.local')
+        if not results:
+            raise SystemExit("Failed to read config file 'gthx.config.local'")
+        dbUser = config.get('MYSQL','GTHX_MYSQL_USER')
+        dbPassword = config.get('MYSQL','GTHX_MYSQL_PASSWORD')
+        dbName = config.get('MYSQL','GTHX_MYSQL_DATABASE')
 
-        dbpassword = os.getenv("GTHX_MYSQL_PASSWORD")
-        if not dbpassword:
-            raise ValueError("No password specified. Have you set GTHX_MYSQL_PASSWORD?")
-
-        dbname = os.getenv("GTHX_MYSQL_DATABASE")
-        if not dbname:
-            raise ValueError("No database specified. Have you set GTHX_MYSQL_DATABASE?")
-
-        self.db = DbAccess(dbuser, dbpassword, dbname)
+        self.db = DbAccess(dbUser, dbPassword, dbName)
 
     def test_youtube_refs(self):
         testItem = "I7nVrT00ST4"
