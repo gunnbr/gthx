@@ -32,7 +32,7 @@ from Email import Email
 
 from pprint import pprint
 
-VERSION = "gthx version 0.26 2017-06-11"
+VERSION = "gthx version 1.27 2018-01-06"
 trackednick = ""
 channel = ""
 mynick = ""
@@ -552,8 +552,7 @@ class Gthx(irc.IRCClient):
                     if not user:
                         user = "Unknown"
                     if value:
-                        safeValue = value.decode("utf-8")
-                        print "At %s, %s set to: %s" % (factoid[4], user, safeValue)
+                        print "At %s, %s set to: %s" % (factoid[4], user, value)
                         self.msg(replyChannel, "At %s, %s set to: %s" % (factoid[4], user, value))
                     else:
                         print "At %s, %s deleted this item" % (factoid[4], user)
