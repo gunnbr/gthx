@@ -32,7 +32,7 @@ from Email import Email
 
 from pprint import pprint
 
-VERSION = "gthx version 1.27 2018-01-06"
+VERSION = "gthx version 1.28 2018-01-09"
 trackednick = ""
 channel = ""
 mynick = ""
@@ -120,7 +120,7 @@ class Gthx(irc.IRCClient):
         self.factoidSet = re.compile("(.+?)\s(is|are)(\salso)?\s(.+)")
         self.googleQuery = re.compile("\s*google\s+(.*?)\s+for\s+([a-zA-Z\*_\\\[\]\{\}^`|\*][a-zA-Z0-9\*_\\\[\]\{\}^`|-]*)")
         self.thingMention = re.compile("http(s)?:\/\/www.thingiverse.com\/thing:(\d+)", re.IGNORECASE)
-        self.youtubeMention = re.compile("http(s)?:\/\/(www\.youtube\.com\/watch\?v=|youtu\.be\/)([\w\-]*)", re.IGNORECASE)
+        self.youtubeMention = re.compile("http(s)?:\/\/(www\.youtube\.com\/watch\?v=|youtu\.be\/)([\w\-]*)(\S*)", re.IGNORECASE)
         self.uptimeStart = datetime.now()
         self.lurkerReplyChannel = ""
 
@@ -622,6 +622,7 @@ class Gthx(irc.IRCClient):
             match = self.youtubeMention.search(parseMsg)
             if match:
                 youtubeId = match.group(3)
+                fullLink = match.group(0)
                 print "Match for youtube query item %s" % youtubeId
                 rows = self.db.addYoutubeRef(youtubeId)
                 refs = int(rows[0][0])
@@ -639,13 +640,13 @@ class Gthx(irc.IRCClient):
                             title = unescape(title)
                             self.db.addYoutubeTitle(youtubeId, title)
                             print "The title for video %s is: %s " % (youtubeId, title)
-                            reply = 'http://www.youtube.com/watch?v=%s => %s => %s IRC mentions' % (youtubeId, title, refs)
+                            reply = '%s => %s => %s IRC mentions' % (fullLink, title, refs)
                             print "Reply is: %s" % reply
                             self.msg(replyChannel, reply)
                             print "Message sent."
                         else:
                             print "No title found for youtube video %s" % (youtubeId)
-                            reply = 'http://www.youtube.com/watch?v=%s => ???? => %s IRC mentions' % (youtubeId, refs)
+                            reply = '%s => ???? => %s IRC mentions' % (fullLink, refs)
                             self.msg(replyChannel, reply)
                     
                     def queryResponse(response):
@@ -662,7 +663,7 @@ class Gthx(irc.IRCClient):
                     titleQuery.addCallback(queryResponse)
                 else:
                     print "Already have a title for item %s: %s" % (youtubeId, title)
-                    reply = 'http://www.youtube.com/watch?v=%s => %s => %s IRC mentions' % (youtubeId, title, refs)
+                    reply = '%s => %s => %s IRC mentions' % (fullLink, title, refs)
                     self.msg(replyChannel, reply)
                 
     def action(self, sender, channel, message):
