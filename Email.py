@@ -34,6 +34,7 @@ class Email():
 
             # Now send the message
             s = smtplib.SMTP(self.server)
+            #s.set_debuglevel(True)
             s.starttls()
             s.login(self.user, self.password)
             s.sendmail(self.from_email, [self.to_email], msg)
