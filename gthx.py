@@ -22,6 +22,8 @@ import traceback
 import urllib
 import ConfigParser
 
+from HTMLParser import HTMLParser
+
 from datetime import datetime
 
 from DbAccess import DbAccess
@@ -32,14 +34,15 @@ from Email import Email
 
 from pprint import pprint
 
-VERSION = "gthx version 1.28 2018-01-09"
+VERSION = "gthx version 1.29 2018-07-27"
 trackednick = ""
 channel = ""
 mynick = ""
 
 
 def unescape(htmlString):
-    return htmlString.replace("&quot;","\"").replace("&gt;","<").replace("&lt;","<").replace("&apos;","'").replace("&amp;","&")
+    h = HTMLParser()
+    return h.unescape(htmlString).encode("utf-8")
 
 class TitleParser(LineOnlyReceiver):
     def __init__(self, finished):
