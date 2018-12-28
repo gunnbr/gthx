@@ -34,7 +34,7 @@ from Email import Email
 
 from pprint import pprint
 
-VERSION = "gthx version 1.30 2018-11-17"
+VERSION = "gthx version 1.31 2018-12-28"
 trackednick = ""
 channel = ""
 mynick = ""
@@ -597,11 +597,11 @@ class Gthx(irc.IRCClient):
                             title = unescape(title)
                             self.db.addThingiverseTitle(thingId, title)
                             print "The title for thing %s is: %s " % (thingId, title)
-                            reply = '%s linked to "%s" on thingieverse => %s IRC mentions' % (user, title, refs)
+                            reply = '%s linked to "%s" on thingiverse => %s IRC mentions' % (user, title, refs)
                             self.msg(replyChannel, reply)
                         else:
                             print "No title found for thing %s" % (thingId)
-                            reply = '%s linked to "%s" on thingieverse => %s IRC mentions' % (user, thingId, refs)
+                            reply = '%s linked to thing %s on thingiverse => %s IRC mentions' % (user, thingId, refs)
                             self.msg(replyChannel, reply)
                     
                     def queryResponse(response):
@@ -617,7 +617,7 @@ class Gthx(irc.IRCClient):
                     titleQuery.addCallback(queryResponse)
                 else:
                     print "Already have a title for thing %s: %s" % (thingId, title)
-                    reply = '%s linked to "%s" on thingieverse => %s IRC mentions' % (user, title, refs)
+                    reply = '%s linked to "%s" on thingiverse => %s IRC mentions' % (user, title, refs)
                     self.msg(replyChannel, reply)
 
         # Check for youtube mention
