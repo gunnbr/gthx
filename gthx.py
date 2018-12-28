@@ -601,7 +601,7 @@ class Gthx(irc.IRCClient):
                             self.msg(replyChannel, reply)
                         else:
                             print "No title found for thing %s" % (thingId)
-                            reply = '%s linked to "%s" on thingieverse => %s IRC mentions' % (user, '????', refs)
+                            reply = '%s linked to "%s" on thingieverse => %s IRC mentions' % (user, thingId, refs)
                             self.msg(replyChannel, reply)
                     
                     def queryResponse(response):
