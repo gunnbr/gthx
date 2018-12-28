@@ -597,11 +597,11 @@ class Gthx(irc.IRCClient):
                             title = unescape(title)
                             self.db.addThingiverseTitle(thingId, title)
                             print "The title for thing %s is: %s " % (thingId, title)
-                            reply = 'https://www.thingiverse.com/thing:%s => %s => %s IRC mentions' % (thingId, title, refs)
+                            reply = '%s linked to "%s" on thingieverse => %s IRC mentions' % (user, title, refs)
                             self.msg(replyChannel, reply)
                         else:
                             print "No title found for thing %s" % (thingId)
-                            reply = 'https://www.thingiverse.com/thing:%s => ???? => %s IRC mentions' % (thingId, refs)
+                            reply = '%s linked to "%s" on thingieverse => %s IRC mentions' % (user, thingId, refs)
                             self.msg(replyChannel, reply)
                     
                     def queryResponse(response):
@@ -617,7 +617,7 @@ class Gthx(irc.IRCClient):
                     titleQuery.addCallback(queryResponse)
                 else:
                     print "Already have a title for thing %s: %s" % (thingId, title)
-                    reply = 'https://www.thingiverse.com/thing:%s => %s => %s IRC mentions' % (thingId, title, refs)
+                    reply = '%s linked to "%s" on thingieverse => %s IRC mentions' % (user, title, refs)
                     self.msg(replyChannel, reply)
 
         # Check for youtube mention
