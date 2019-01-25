@@ -34,7 +34,7 @@ from Email import Email
 
 from pprint import pprint
 
-VERSION = "gthx version 1.31 2018-12-28"
+VERSION = "gthx version 1.32 2019-01-25"
 trackednick = ""
 channel = ""
 mynick = ""

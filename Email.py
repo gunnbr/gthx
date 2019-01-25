@@ -20,7 +20,7 @@ class Email():
         try:
             thread.start_new_thread(self.send, (subject, message))
         except Exception as e:
-            print "Failed to start a thread email: %s", e
+            print "Failed to start a thread email: %s" % e
         
     def send(self, subject, message):
         if ((self.user != None) and (self.password != None) and (self.server != None)):
@@ -33,12 +33,17 @@ class Email():
             msg += message
 
             # Now send the message
-            s = smtplib.SMTP(self.server)
-            #s.set_debuglevel(True)
-            s.starttls()
-            s.login(self.user, self.password)
-            s.sendmail(self.from_email, [self.to_email], msg)
-            s.quit()
+            try:
+                #s = smtplib.SMTP(self.server)
+                s = smtplib.SMTP_SSL(self.server)
+                s.set_debuglevel(True)
+                # Only use starttls() with SMTP, not SMTP_SSL
+                #s.starttls()
+                s.login(self.user, self.password)
+                s.sendmail(self.from_email, [self.to_email], msg)
+                s.quit()
+            except Exception as e:
+                print "Failed to send email notification: %s" % e
             
             print "Done with email"
 
