@@ -117,7 +117,7 @@ class Gthx(irc.IRCClient):
         
         self.trackedpresent = dict()
         self.gotwhoischannel = False
-        self.seenQuery = re.compile("\s*seen\s+([a-zA-Z\*_\\\[\]\{\}^`|\*][a-zA-Z0-9\*_\\\[\]\{\}^`|-]*)[\s\?]*")
+        self.seenQuery = re.compile("\s*seen\s+([a-zA-Z\*_\\\[\]\{\}^`|\*][a-zA-Z0-9\*_\\\[\]\{\}^`|-]*)[\s\?]*$")
         self.tellQuery = re.compile("\s*tell\s+([a-zA-Z\*_\\\[\]\{\}^`|\*][a-zA-Z0-9\*_\\\[\]\{\}^`|-]*)\s*(.+)")
         self.factoidQuery = re.compile("(.+)[?!](\s*$|\s*\|\s*([a-zA-Z\*_\\\[\]\{\}^`|\*][a-zA-Z0-9\*_\\\[\]\{\}^`|-]*)$)")
         self.factoidSet = re.compile("(.+?)\s(is|are)(\salso)?\s(.+)")
