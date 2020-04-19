@@ -16,11 +16,18 @@ from the code, I'm far from a python expert and welcome any fixes or changes to 
 
 ## Installation
 To install a new bot, make sure you already have installed:
-* MySQL (gthx was developed on version 5.5)
+* MySQL or MariaDB
 * libmysqlclient-dev
 * Python 2.7
+
+### Install required Python libraries
+The currently required libraries are:
 * MySQLdb (Python library "mysqldb")
 * Twisted (Python library)
+To install these automatically, run:
+```
+pip install -r reuirements.txt
+```
 
 ### Create a new database
 Once that is done, create a new database and user in MySQL for gthx to use and grant the user full permissions
