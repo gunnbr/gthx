@@ -21,11 +21,12 @@ class DbAccessSeenTest(unittest.TestCase):
         results = config.read('gthx.config.local')
         if not results:
             raise SystemExit("Failed to read config file 'gthx.config.local'")
+        dbHost = config.get('MYSQL','GTHX_MYSQL_HOST')
         dbUser = config.get('MYSQL','GTHX_MYSQL_USER')
         dbPassword = config.get('MYSQL','GTHX_MYSQL_PASSWORD')
         dbName = config.get('MYSQL','GTHX_MYSQL_DATABASE')
 
-        self.db = DbAccess(dbUser, dbPassword, dbName)
+        self.db = DbAccess(dbHost, dbUser, dbPassword, dbName)
 
     def test_missing_seen(self):
         data = self.db.seen(DbAccessSeenTest.missinguser)
@@ -160,11 +161,12 @@ class DbAccessFactoidTest(unittest.TestCase):
         results = config.read('gthx.config.local')
         if not results:
             raise SystemExit("Failed to read config file 'gthx.config.local'")
+        dbHost = config.get('MYSQL','GTHX_MYSQL_HOST')
         dbUser = config.get('MYSQL','GTHX_MYSQL_USER')
         dbPassword = config.get('MYSQL','GTHX_MYSQL_PASSWORD')
         dbName = config.get('MYSQL','GTHX_MYSQL_DATABASE')
 
-        self.db = DbAccess(dbUser, dbPassword, dbName)
+        self.db = DbAccess(dbHost, dbUser, dbPassword, dbName)
 
     def test_get_missing_factoid(self):
         missingFactoid = "missingfactoid"
@@ -722,7 +724,7 @@ class DbAccessFactoidTest(unittest.TestCase):
     def tearDown(self):
         # Clear all factoids and history
         self.db.deleteAllFactoids()
-        #print "Skipping factoid teardown"
+        #print("Skipping factoid teardown")
 
 
 class DbAccessTellTest(unittest.TestCase):
@@ -733,11 +735,12 @@ class DbAccessTellTest(unittest.TestCase):
         results = config.read('gthx.config.local')
         if not results:
             raise SystemExit("Failed to read config file 'gthx.config.local'")
+        dbHost = config.get('MYSQL','GTHX_MYSQL_HOST')
         dbUser = config.get('MYSQL','GTHX_MYSQL_USER')
         dbPassword = config.get('MYSQL','GTHX_MYSQL_PASSWORD')
         dbName = config.get('MYSQL','GTHX_MYSQL_DATABASE')
 
-        self.db = DbAccess(dbUser, dbPassword, dbName)
+        self.db = DbAccess(dbHost, dbUser, dbPassword, dbName)
 
     def test_user_with_no_tells(self):
         user="someuser"
@@ -865,11 +868,12 @@ class DbAccessThingiverseTest(unittest.TestCase):
         results = config.read('gthx.config.local')
         if not results:
             raise SystemExit("Failed to read config file 'gthx.config.local'")
+        dbHost = config.get('MYSQL','GTHX_MYSQL_HOST')
         dbUser = config.get('MYSQL','GTHX_MYSQL_USER')
         dbPassword = config.get('MYSQL','GTHX_MYSQL_PASSWORD')
         dbName = config.get('MYSQL','GTHX_MYSQL_DATABASE')
 
-        self.db = DbAccess(dbUser, dbPassword, dbName)
+        self.db = DbAccess(dbHost, dbUser, dbPassword, dbName)
 
     def test_thingiverse_refs(self):
         testItem = 1234
@@ -911,11 +915,12 @@ class DbAccessYoutubeRefTest(unittest.TestCase):
         results = config.read('gthx.config.local')
         if not results:
             raise SystemExit("Failed to read config file 'gthx.config.local'")
+        dbHost = config.get('MYSQL','GTHX_MYSQL_HOST')
         dbUser = config.get('MYSQL','GTHX_MYSQL_USER')
         dbPassword = config.get('MYSQL','GTHX_MYSQL_PASSWORD')
         dbName = config.get('MYSQL','GTHX_MYSQL_DATABASE')
 
-        self.db = DbAccess(dbUser, dbPassword, dbName)
+        self.db = DbAccess(dbHost, dbUser, dbPassword, dbName)
 
     def test_youtube_refs(self):
         testItem = "I7nVrT00ST4"

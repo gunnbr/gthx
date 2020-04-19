@@ -107,8 +107,8 @@ class Gthx(irc.IRCClient):
     
     restring = ""
 
-    def __init__(self, dbUser, dbPassword, dbDatabase, nickservPassword):
-        self.db = DbAccess(dbUser, dbPassword, dbDatabase)
+    def __init__(self, dbHost, dbUser, dbPassword, dbDatabase, nickservPassword):
+        self.db = DbAccess(dbHost, dbUser, dbPassword, dbDatabase)
         # Just setting this variable sets the nickserv login password
         # (Maybe? We still do our own procesing later)
         self.password = nickservPassword
@@ -682,10 +682,11 @@ class GthxFactory(protocol.ClientFactory):
     A new protocol instance will be created each time we connect to the server.
     """
 
-    def __init__(self, channels, nick, emailClient, dbUser, dbPassword, dbDatabase, nickservPassword):
+    def __init__(self, channels, nick, emailClient, dbHost, dbUser, dbPassword, dbDatabase, nickservPassword):
         self.channels = channels
         self.emailClient = emailClient
         self.nick = nick
+        self.dbHost = dbHost
         self.dbUser = dbUser
         self.dbPassword = dbPassword
         self.dbDatabase = dbDatabase
@@ -695,7 +696,7 @@ class GthxFactory(protocol.ClientFactory):
     def buildProtocol(self, addr):
         print("GthxFactory build protocol")
         try:
-            p = Gthx(dbUser, dbPassword, dbDatabase, nickservPassword)
+            p = Gthx(dbHost, dbUser, dbPassword, dbDatabase, nickservPassword)
             p.factory = self
             p.emailClient = self.emailClient
             p.nickname = self.nick
@@ -760,6 +761,7 @@ if __name__ == '__main__':
             from_email = config.get("EMAIL", "GTHX_EMAIL_FROM")
             to_email = config.get("EMAIL", "GTHX_EMAIL_TO")
             email_server = config.get("EMAIL", "GTHX_EMAIL_SMTP_SERVER")
+            dbHost = config.get('MYSQL','GTHX_MYSQL_HOST')
             dbUser = config.get('MYSQL','GTHX_MYSQL_USER')
             dbPassword = config.get('MYSQL','GTHX_MYSQL_PASSWORD')
             dbDatabase = config.get('MYSQL','GTHX_MYSQL_DATABASE')
@@ -771,7 +773,7 @@ if __name__ == '__main__':
             log.startLogging(open(logfile, 'a'))
 
             # create factory protocol and application
-            f = GthxFactory(channels, mynick, emailClient, dbUser, dbPassword, dbDatabase, nickservPassword)
+            f = GthxFactory(channels, mynick, emailClient, dbHost, dbUser, dbPassword, dbDatabase, nickservPassword)
 
             # connect factory to this host and port
             reactor.connectTCP("chat.freenode.net", 6667, f)

@@ -24,7 +24,8 @@ class DbAccess():
     Gives access to read and write all the tables in the database
     """
 
-    def __init__(self, user, password, dbname):
+    def __init__(self, host, user, password, dbname):
+        self.dbHost = host
         self.dbuser = user
         self.dbpassword = password
         self.dbname = dbname
@@ -35,7 +36,7 @@ class DbAccess():
         retries = 5
         while True:
             try:
-                self.db = MySQLdb.connect(host='localhost', user=self.dbuser, passwd=self.dbpassword, db=self.dbname)
+                self.db = MySQLdb.connect(host=self.dbHost, user=self.dbuser, passwd=self.dbpassword, db=self.dbname,charset='utf8')
                 self.cur = self.db.cursor()
                 return
             except MySQLdb.Error as e:
@@ -103,7 +104,7 @@ class DbAccess():
         self.db.close()
         
     def seen(self, nick):
-        nick = string.replace(nick,"*","%")
+        nick = nick.replace("*","%")
         return self.executeAndFetchAll("SELECT * FROM seen WHERE name LIKE %s ORDER BY timestamp DESC LIMIT 3", MySQLdb.escape_string(nick))
 
     def updateSeen(self, nick, channel, message):
