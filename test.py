@@ -2,7 +2,7 @@
 import unittest
 import os
 import time
-import ConfigParser
+import configparser
 
 from DbAccess import DbAccess
 from DbAccess import Seen
@@ -17,7 +17,7 @@ class DbAccessSeenTest(unittest.TestCase):
     unicodemessage = "I love 🌮s"
     
     def setUp(self):
-        config = ConfigParser.ConfigParser()
+        config = configparser.ConfigParser()
         results = config.read('gthx.config.local')
         if not results:
             raise SystemExit("Failed to read config file 'gthx.config.local'")
@@ -156,7 +156,7 @@ class DbAccessSeenTest(unittest.TestCase):
 
 class DbAccessFactoidTest(unittest.TestCase):
     def setUp(self):
-        config = ConfigParser.ConfigParser()
+        config = configparser.ConfigParser()
         results = config.read('gthx.config.local')
         if not results:
             raise SystemExit("Failed to read config file 'gthx.config.local'")
@@ -188,10 +188,10 @@ class DbAccessFactoidTest(unittest.TestCase):
         factoid=data[0]
         
         # TODO: I really need to make this data access more intuitive to use
-        self.assertEquals(factoid[1], item, "Factoid failed to retrieve the item field correctly")
-        self.assertEquals(factoid[2], isAre, "Factoid failed to retrieve the is/are field correctly")
-        self.assertEquals(factoid[3], definition, "Factoid failed to retrieve the defintion correctly")
-        self.assertEquals(factoid[4], user, "Factoid failed to retrieve the user correctly")
+        self.assertEqual(factoid[1], item, "Factoid failed to retrieve the item field correctly")
+        self.assertEqual(factoid[2], isAre, "Factoid failed to retrieve the is/are field correctly")
+        self.assertEqual(factoid[3], definition, "Factoid failed to retrieve the defintion correctly")
+        self.assertEqual(factoid[4], user, "Factoid failed to retrieve the user correctly")
 
         delta = datetime.now() - factoid[5]
         self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a factoid date set: delta is %d" % delta.total_seconds())
@@ -214,10 +214,10 @@ class DbAccessFactoidTest(unittest.TestCase):
 
         factoid=data[0]
         
-        self.assertEquals(factoid[1], item, "Factoid failed to retrieve the item field correctly")
-        self.assertEquals(factoid[2], isAre, "Factoid failed to retrieve the is/are field correctly")
-        self.assertEquals(factoid[3], definition, "Factoid failed to retrieve the defintion correctly")
-        self.assertEquals(factoid[4], user, "Factoid failed to retrieve the user correctly")
+        self.assertEqual(factoid[1], item, "Factoid failed to retrieve the item field correctly")
+        self.assertEqual(factoid[2], isAre, "Factoid failed to retrieve the is/are field correctly")
+        self.assertEqual(factoid[3], definition, "Factoid failed to retrieve the defintion correctly")
+        self.assertEqual(factoid[4], user, "Factoid failed to retrieve the user correctly")
 
         delta = datetime.now() - factoid[5]
         self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a factoid date set: delta is %d" % delta.total_seconds())
@@ -245,10 +245,10 @@ class DbAccessFactoidTest(unittest.TestCase):
 
         factoid=data[0]
         
-        self.assertEquals(factoid[1], item, "Factoid failed to retrieve the item field correctly")
-        self.assertEquals(factoid[2], isAre, "Factoid failed to retrieve the is/are field correctly")
-        self.assertEquals(factoid[3], definition, "Factoid failed to retrieve the defintion correctly")
-        self.assertEquals(factoid[4], user, "Factoid failed to retrieve the user correctly")
+        self.assertEqual(factoid[1], item, "Factoid failed to retrieve the item field correctly")
+        self.assertEqual(factoid[2], isAre, "Factoid failed to retrieve the is/are field correctly")
+        self.assertEqual(factoid[3], definition, "Factoid failed to retrieve the defintion correctly")
+        self.assertEqual(factoid[4], user, "Factoid failed to retrieve the user correctly")
 
         delta = datetime.now() - factoid[5]
         self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a factoid date set: delta is %d" % delta.total_seconds())
@@ -257,10 +257,10 @@ class DbAccessFactoidTest(unittest.TestCase):
 
         factoid=data[1]
         
-        self.assertEquals(factoid[1], item, "Factoid failed to retrieve the item field correctly")
-        self.assertEquals(factoid[2], isAre, "Factoid failed to retrieve the is/are field correctly")
-        self.assertEquals(factoid[3], definition2, "Factoid failed to retrieve the defintion correctly")
-        self.assertEquals(factoid[4], user2, "Factoid failed to retrieve the user correctly")
+        self.assertEqual(factoid[1], item, "Factoid failed to retrieve the item field correctly")
+        self.assertEqual(factoid[2], isAre, "Factoid failed to retrieve the is/are field correctly")
+        self.assertEqual(factoid[3], definition2, "Factoid failed to retrieve the defintion correctly")
+        self.assertEqual(factoid[4], user2, "Factoid failed to retrieve the user correctly")
 
         delta = datetime.now() - factoid[5]
         self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a factoid date set: delta is %d" % delta.total_seconds())
@@ -276,10 +276,10 @@ class DbAccessFactoidTest(unittest.TestCase):
 
         factoid=data[0]
         
-        self.assertEquals(factoid[1], item, "Factoid failed to retrieve the item field correctly")
-        self.assertEquals(factoid[2], isAre, "Factoid failed to retrieve the is/are field correctly")
-        self.assertEquals(factoid[3], replacement, "Factoid failed to retrieve the defintion correctly")
-        self.assertEquals(factoid[4], user3, "Factoid failed to retrieve the user correctly")
+        self.assertEqual(factoid[1], item, "Factoid failed to retrieve the item field correctly")
+        self.assertEqual(factoid[2], isAre, "Factoid failed to retrieve the is/are field correctly")
+        self.assertEqual(factoid[3], replacement, "Factoid failed to retrieve the defintion correctly")
+        self.assertEqual(factoid[4], user3, "Factoid failed to retrieve the user correctly")
 
         delta = datetime.now() - factoid[5]
         self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a factoid date set: delta is %d" % delta.total_seconds())
@@ -527,9 +527,9 @@ class DbAccessFactoidTest(unittest.TestCase):
 
         # Verify that the ref count still exists
         history = info[0]
-        self.assertEquals(history[6], 1, "Factoid history ref count is incorrect: %s" % history[6])
+        self.assertEqual(history[6], 1, "Factoid history ref count is incorrect: %s" % history[6])
         history = info[1]
-        self.assertEquals(history[6], 1, "Factoid history ref count is incorrect: %s" % history[6])
+        self.assertEqual(history[6], 1, "Factoid history ref count is incorrect: %s" % history[6])
 
         # Now reference again now that it's deleted...
         data = self.db.getFactoid(item)
@@ -540,9 +540,9 @@ class DbAccessFactoidTest(unittest.TestCase):
 
         # Verify that the ref count hasn't changed
         history = info[0]
-        self.assertEquals(history[6], 1, "Factoid history ref count is incorrect: %s" % history[6])
+        self.assertEqual(history[6], 1, "Factoid history ref count is incorrect: %s" % history[6])
         history = info[1]
-        self.assertEquals(history[6], 1, "Factoid history ref count is incorrect: %s" % history[6])
+        self.assertEqual(history[6], 1, "Factoid history ref count is incorrect: %s" % history[6])
 
     def test_info_for_forget_factoid(self):
         user="someguy"
@@ -729,7 +729,7 @@ class DbAccessTellTest(unittest.TestCase):
     missinguser = "somerandomuser"
     
     def setUp(self):
-        config = ConfigParser.ConfigParser()
+        config = configparser.ConfigParser()
         results = config.read('gthx.config.local')
         if not results:
             raise SystemExit("Failed to read config file 'gthx.config.local'")
@@ -743,7 +743,7 @@ class DbAccessTellTest(unittest.TestCase):
         user="someuser"
 
         data = self.db.getTell(user)
-        self.assertEquals(len(data), 0, "Wrong number of tells returned for a user who doesn't have any waiting")
+        self.assertEqual(len(data), 0, "Wrong number of tells returned for a user who doesn't have any waiting")
         
     def test_get_with_no_tells(self):
         data = self.db.getTell(DbAccessTellTest.missinguser)
@@ -760,13 +760,13 @@ class DbAccessTellTest(unittest.TestCase):
         
         data = self.db.getTell(receiver)
         self.assertTrue(data, "Got no tells for a user with tells waiting")
-        self.assertEquals(len(data), 1, "Got wrong number of tells for a user")
+        self.assertEqual(len(data), 1, "Got wrong number of tells for a user")
         
         tell = data[0]
-        self.assertEquals(tell[1], teller, "Got wrong author for a tell")
-        self.assertEquals(tell[2], receiver, "Got wrong recipient for a tell")
-        self.assertEquals(tell[4], message, "Got wrong message for a tell")
-        self.assertEquals(tell[5], kthxKnows, "Got wrong inTracked for a tell")
+        self.assertEqual(tell[1], teller, "Got wrong author for a tell")
+        self.assertEqual(tell[2], receiver, "Got wrong recipient for a tell")
+        self.assertEqual(tell[4], message, "Got wrong message for a tell")
+        self.assertEqual(tell[5], kthxKnows, "Got wrong inTracked for a tell")
 
         delta = datetime.now() - tell[3]
         self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a tell date set: delta is %d" % delta.total_seconds())
@@ -786,13 +786,13 @@ class DbAccessTellTest(unittest.TestCase):
         
         data = self.db.getTell(receiver)
         self.assertTrue(data, "Got no tells for a user with tells waiting")
-        self.assertEquals(len(data), 1, "Got wrong number of tells for a user")
+        self.assertEqual(len(data), 1, "Got wrong number of tells for a user")
         
         tell = data[0]
-        self.assertEquals(tell[1], teller, "Got wrong author for a tell")
-        self.assertEquals(tell[2], receiver, "Got wrong recipient for a tell")
-        self.assertEquals(tell[4], message, "Got wrong message for a tell")
-        self.assertEquals(tell[5], kthxKnows, "Got wrong inTracked for a tell")
+        self.assertEqual(tell[1], teller, "Got wrong author for a tell")
+        self.assertEqual(tell[2], receiver, "Got wrong recipient for a tell")
+        self.assertEqual(tell[4], message, "Got wrong message for a tell")
+        self.assertEqual(tell[5], kthxKnows, "Got wrong inTracked for a tell")
 
         delta = datetime.now() - tell[3]
         self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a tell date set: delta is %d" % delta.total_seconds())
@@ -822,31 +822,31 @@ class DbAccessTellTest(unittest.TestCase):
         
         data = self.db.getTell(receiver)
         self.assertTrue(data, "Got no tells for a user with tells waiting")
-        self.assertEquals(len(data), 3, "Got wrong number of tells for a user")
+        self.assertEqual(len(data), 3, "Got wrong number of tells for a user")
         
         tell = data[0]
-        self.assertEquals(tell[1], teller, "Got wrong author for a tell")
-        self.assertEquals(tell[2], receiver, "Got wrong recipient for a tell")
-        self.assertEquals(tell[4], message, "Got wrong message for a tell")
-        self.assertEquals(tell[5], kthxKnows, "Got wrong inTracked for a tell")
+        self.assertEqual(tell[1], teller, "Got wrong author for a tell")
+        self.assertEqual(tell[2], receiver, "Got wrong recipient for a tell")
+        self.assertEqual(tell[4], message, "Got wrong message for a tell")
+        self.assertEqual(tell[5], kthxKnows, "Got wrong inTracked for a tell")
 
         delta = datetime.now() - tell[3]
         self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a tell date set: delta is %d" % delta.total_seconds())
 
         tell = data[1]
-        self.assertEquals(tell[1], teller2, "Got wrong author for a tell")
-        self.assertEquals(tell[2], receiver, "Got wrong recipient for a tell")
-        self.assertEquals(tell[4], message2, "Got wrong message for a tell")
-        self.assertEquals(tell[5], kthxKnows2, "Got wrong inTracked for a tell")
+        self.assertEqual(tell[1], teller2, "Got wrong author for a tell")
+        self.assertEqual(tell[2], receiver, "Got wrong recipient for a tell")
+        self.assertEqual(tell[4], message2, "Got wrong message for a tell")
+        self.assertEqual(tell[5], kthxKnows2, "Got wrong inTracked for a tell")
 
         delta = datetime.now() - tell[3]
         self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a tell date set: delta is %d" % delta.total_seconds())
 
         tell = data[2]
-        self.assertEquals(tell[1], teller3, "Got wrong author for a tell")
-        self.assertEquals(tell[2], receiver, "Got wrong recipient for a tell")
-        self.assertEquals(tell[4], message3, "Got wrong message for a tell")
-        self.assertEquals(tell[5], kthxKnows3, "Got wrong inTracked for a tell")
+        self.assertEqual(tell[1], teller3, "Got wrong author for a tell")
+        self.assertEqual(tell[2], receiver, "Got wrong recipient for a tell")
+        self.assertEqual(tell[4], message3, "Got wrong message for a tell")
+        self.assertEqual(tell[5], kthxKnows3, "Got wrong inTracked for a tell")
 
         delta = datetime.now() - tell[3]
         self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a tell date set: delta is %d" % delta.total_seconds())
@@ -861,7 +861,7 @@ class DbAccessTellTest(unittest.TestCase):
 class DbAccessThingiverseTest(unittest.TestCase):
     
     def setUp(self):
-        config = ConfigParser.ConfigParser()
+        config = configparser.ConfigParser()
         results = config.read('gthx.config.local')
         if not results:
             raise SystemExit("Failed to read config file 'gthx.config.local'")
@@ -876,30 +876,30 @@ class DbAccessThingiverseTest(unittest.TestCase):
         testTitle = "The most wonderful thing in the world"
         
         rows = self.db.addThingiverseRef(testItem)
-        self.assertEquals(len(rows), 1, "First thingiverse ref returned the wrong number of rows.")
+        self.assertEqual(len(rows), 1, "First thingiverse ref returned the wrong number of rows.")
         data = rows[0]
-        self.assertEquals(data[0], 1, "First thingiverse ref returned wrong number of references.")
+        self.assertEqual(data[0], 1, "First thingiverse ref returned wrong number of references.")
         self.assertIsNone(data[1], "First thingiverse ref returned a title when it shouldn't have.")
 
         rows = self.db.addThingiverseRef(testItem)
-        self.assertEquals(len(rows), 1, "Second thingiverse ref returned the wrong number of rows.")
+        self.assertEqual(len(rows), 1, "Second thingiverse ref returned the wrong number of rows.")
         data = rows[0]
-        self.assertEquals(data[0], 2, "Second thingiverse ref returned wrong number of references.")
+        self.assertEqual(data[0], 2, "Second thingiverse ref returned wrong number of references.")
         self.assertIsNone(data[1], "Second thingiverse ref returned a title when it shouldn't have.")
 
         rows = self.db.addThingiverseRef(testItem)
-        self.assertEquals(len(rows), 1, "Third thingiverse ref returned the wrong number of rows.")
+        self.assertEqual(len(rows), 1, "Third thingiverse ref returned the wrong number of rows.")
         data = rows[0]
-        self.assertEquals(data[0], 3, "Third thingiverse ref returned wrong number of references.")
+        self.assertEqual(data[0], 3, "Third thingiverse ref returned wrong number of references.")
         self.assertIsNone(data[1], "Third thingiverse ref returned a title when it shouldn't have.")
 
         self.db.addThingiverseTitle(testItem, testTitle)
         
         rows = self.db.addThingiverseRef(testItem)
-        self.assertEquals(len(rows), 1, "Fourth thingiverse ref returned the wrong number of rows.")
+        self.assertEqual(len(rows), 1, "Fourth thingiverse ref returned the wrong number of rows.")
         data = rows[0]
-        self.assertEquals(data[0], 4, "Fourth thingiverse ref returned wrong number of references.")
-        self.assertEquals(data[1], testTitle, "Fourth thingiverse ref returned the wrong title.")
+        self.assertEqual(data[0], 4, "Fourth thingiverse ref returned wrong number of references.")
+        self.assertEqual(data[1], testTitle, "Fourth thingiverse ref returned the wrong title.")
         
     def tearDown(self):
         self.db.deleteAllThingiverseRefs()
@@ -907,7 +907,7 @@ class DbAccessThingiverseTest(unittest.TestCase):
 class DbAccessYoutubeRefTest(unittest.TestCase):
     
     def setUp(self):
-        config = ConfigParser.ConfigParser()
+        config = configparser.ConfigParser()
         results = config.read('gthx.config.local')
         if not results:
             raise SystemExit("Failed to read config file 'gthx.config.local'")
@@ -924,24 +924,24 @@ class DbAccessYoutubeRefTest(unittest.TestCase):
         # Verify that referencing an item the first time causes the ref count to
         # be set to 1
         rows = self.db.addYoutubeRef(testItem)
-        self.assertEquals(len(rows), 1, "First youtube ref returned the wrong number of rows.")
+        self.assertEqual(len(rows), 1, "First youtube ref returned the wrong number of rows.")
         data = rows[0]
-        self.assertEquals(data[0], 1, "First youtube ref returned wrong number of references.")
+        self.assertEqual(data[0], 1, "First youtube ref returned wrong number of references.")
         self.assertIsNone(data[1], "First youtube ref returned a title when it shouldn't have.")
 
         rows = self.db.addYoutubeRef(testItem)
-        self.assertEquals(len(rows), 1, "First youtube ref returned the wrong number of rows.")
+        self.assertEqual(len(rows), 1, "First youtube ref returned the wrong number of rows.")
         data = rows[0]
-        self.assertEquals(data[0], 2, "Second youtube ref returned wrong number of references.")
+        self.assertEqual(data[0], 2, "Second youtube ref returned wrong number of references.")
         self.assertIsNone(data[1], "Second youtube ref returned a title when it shouldn't have.")
 
         self.db.addYoutubeTitle(testItem, testTitle)
         
         rows = self.db.addYoutubeRef(testItem)
-        self.assertEquals(len(rows), 1, "First youtube ref returned the wrong number of rows.")
+        self.assertEqual(len(rows), 1, "First youtube ref returned the wrong number of rows.")
         data = rows[0]
-        self.assertEquals(data[0], 3, "Third youtube ref returned wrong number of references.")
-        self.assertEquals(data[1], testTitle, "Third youtube ref returned the wrong title: '%s'" % data[1])
+        self.assertEqual(data[0], 3, "Third youtube ref returned wrong number of references.")
+        self.assertEqual(data[1], testTitle, "Third youtube ref returned the wrong title: '%s'" % data[1])
         
     def tearDown(self):
         self.db.deleteAllYoutubeRefs()

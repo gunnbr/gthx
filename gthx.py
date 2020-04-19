@@ -19,10 +19,10 @@ from twisted.internet.defer import Deferred
 # system imports
 import time, sys, re, os
 import traceback
-import urllib
-import ConfigParser
+import urllib.request, urllib.parse, urllib.error
+import configparser
 
-from HTMLParser import HTMLParser
+from html.parser import HTMLParser
 
 from datetime import datetime
 
@@ -56,11 +56,11 @@ class TitleParser(LineOnlyReceiver):
         match = self.titleQuery.search(line)
         if match:
             self.title = match.group(1)
-            print "Got title of: ", self.title
+            print("Got title of: ", self.title)
             self.loseConnection()
                 
     def connectionLost(self, reason):
-        print 'Finished receiving body:', reason.getErrorMessage()
+        print('Finished receiving body:', reason.getErrorMessage())
         self.finished.callback(self.title)
             
 def timesincestring(firsttime):
@@ -113,7 +113,7 @@ class Gthx(irc.IRCClient):
         # (Maybe? We still do our own procesing later)
         self.password = nickservPassword
         
-        print "Connected to MySQL server"
+        print("Connected to MySQL server")
         
         self.trackedpresent = dict()
         self.gotwhoischannel = False
@@ -138,7 +138,7 @@ class Gthx(irc.IRCClient):
     def irc_CAP(self, prefix, params):
         self.log("Got irc_CAP")
         if params[1] != 'ACK' or params[2].split() != ['sasl']:
-            print 'sasl not available'
+            print('sasl not available')
             self.quit('')
         sasl = ('{0}\0{0}\0{1}'.format(self.nickname, self.password)).encode('base64').strip()
         self.sendLine('AUTHENTICATE PLAIN')
@@ -149,7 +149,7 @@ class Gthx(irc.IRCClient):
         self.sendLine('CAP END')
   
     def irc_904(self, prefix, params):
-        print 'sasl auth failed', params
+        print('sasl auth failed', params)
         self.quit('')
 
     def connectionLost(self, reason):
@@ -160,7 +160,7 @@ class Gthx(irc.IRCClient):
     def log(self, message):
         """Write a message to the screen."""
         timestamp = time.strftime("[%H:%M:%S]", time.localtime(time.time()))
-        print '%s %s' % (timestamp, message)
+        print('%s %s' % (timestamp, message))
 
     # callbacks for events
 
@@ -178,11 +178,11 @@ class Gthx(irc.IRCClient):
         # kthx uses: "\s*(${names})[:;,-]?\s*" to match nicks
         if (trackednick):
             self.matchNick = "(%s|%s)(:|;|,|-|\s)+(.+)" % (self.nickname, trackednick)
-            print "Querying WHOIS %s at startup" % trackednick
+            print("Querying WHOIS %s at startup" % trackednick)
             self.whois(trackednick)
         else:
             self.matchNick = "(%s)(:|;|,|-|\s)+(.+)" % (self.nickname)
-            print "Running in standalone mode."
+            print("Running in standalone mode.")
 
     def joined(self, channel):
         """Called when the bot joins the channel."""
@@ -194,11 +194,11 @@ class Gthx(irc.IRCClient):
         """
         Called when I see another user joining a channel.
         """
-        print "%s joined channel %s" % (user, channel)
+        print("%s joined channel %s" % (user, channel))
         # TODO: Change this to verify the IP address before setting it
         if trackednick and (user == trackednick) and (self.trackedpresent[channel] == False):
             self.trackedpresent[channel] = True
-            print "%s is here!" % trackednick
+            print("%s is here!" % trackednick)
             self.emailClient.threadsend("%s status" % self.nickname, "%s has joined channel %s" % (user, channel))
                 
             
@@ -206,53 +206,53 @@ class Gthx(irc.IRCClient):
         """
         Called when I see another user leaving a channel.
         """
-        print "%s left channel %s" % (user, channel)
+        print("%s left channel %s" % (user, channel))
         if trackednick and (user == trackednick) and (self.trackedpresent[channel]):
             self.trackedpresent[channel] = False
-            print "%s is gone." % trackednick
+            print("%s is gone." % trackednick)
             self.emailClient.threadsend("%s status" % self.nickname, "%s has left channel %s" % (user, channel))
 
     def userQuit(self, user, quitMessage):
         """
         Called when I see another user disconnect from the network.
         """
-        safeQuitMessage = quitMessage.decode("utf-8")
-        print "%s disconnected : %s" % (user, safeQuitMessage)
+        safeQuitMessage = quitMessage
+        print("%s disconnected : %s" % (user, safeQuitMessage))
         if trackednick and (user == trackednick):
             for channel in self.channelList:
                 self.trackedpresent[channel] = False
-            print "%s is gone." % trackednick
+            print("%s is gone." % trackednick)
             self.emailClient.threadsend("%s status" % self.nickname, "%s has quit: %s" % (user, quitMessage))
 
     def userKicked(self, kickee, channel, kicker, message):
         """
         Called when I observe someone else being kicked from a channel.
         """
-        print "In %s, %s kicked %s : %s" % (channel, kicker, kickee, message)
+        print("In %s, %s kicked %s : %s" % (channel, kicker, kickee, message))
         if trackednick and (kickee == trackednick) and (self.trackedpresent[channel]):
             self.trackedpresent[channel] = False
-            print "%s is gone." % trackednick
+            print("%s is gone." % trackednick)
             self.emailClient.threadsend("%s status" % self.nickname, "%s has been kicked from %s by %s: %s" % (kickee, channel, kicker, message))
 
     def userRenamed(self, oldname, newname):
         """
         A user changed their name from oldname to newname.
         """
-        print "%s renamed to %s" % (oldname, newname)
+        print("%s renamed to %s" % (oldname, newname))
         if (trackednick == None):
             return
         if oldname == trackednick:
             for channel in self.channelList:
                 self.trackedpresent[channel] = False
-            print "%s is gone." % trackednick
+            print("%s is gone." % trackednick)
             self.emailClient.threadsend("%s status" % self.nickname, "%s has been renamed to %s" % (oldname, newname))
         if newname == trackednick:
             self.whois(trackednick)
-            print "%s is here!" % trackednick
+            print("%s is here!" % trackednick)
             self.emailClient.threadsend("%s status" % self.nickname, "%s has been renamed to %s--checking WHOIS" % (oldname, newname))
 
     def irc_unknown(self, prefix, command, params):
-        print "Unknown command '%s' '%s' '%s'" % (prefix, command, params)
+        print("Unknown command '%s' '%s' '%s'" % (prefix, command, params))
         if (command == 'RPL_NAMREPLY'):
             if (self.lurkerReplyChannel == ""):
                 return
@@ -265,7 +265,7 @@ class Gthx(irc.IRCClient):
         elif (command == 'RPL_ENDOFNAMES'):
             if (self.lurkerReplyChannel == ""):
                 return
-            print "Got RPL_ENDOFNAMES"
+            print("Got RPL_ENDOFNAMES")
             self.msg(self.lurkerReplyChannel,"%d of the %d users in %s right now have never said anything." % (self.lurkerCount, self.channelCount, params[1]))
             self.lurkerReplyChannel = ""
 
@@ -275,36 +275,36 @@ class Gthx(irc.IRCClient):
         params[1]: nick requested
         params[2]: list of channels in common
         """
-        print "Got WHOISCHANNELS with prefix '%s' and params '%s'" % (prefix, params)
-        print "%s is in channels %s" % (params[1], params[2])
+        print("Got WHOISCHANNELS with prefix '%s' and params '%s'" % (prefix, params))
+        print("%s is in channels %s" % (params[1], params[2]))
         self.gotwhoischannel = True
         trackedchannels = params[2].translate(None, '@').split(" ")
         for channel in self.channelList:
             if channel in trackedchannels:
                 self.trackedpresent[channel] = True
-                print "%s is in %s!!" %  (params[1], channel)
+                print("%s is in %s!!" %  (params[1], channel))
                 self.emailClient.threadsend("%s status" % self.nickname, "%s is in channel %s" % (params[1], params[2]))
             else:
                 self.trackedpresent[channel] = False
-                print "%s is NOT in %s!!" %  (params[1], channel)
+                print("%s is NOT in %s!!" %  (params[1], channel))
 
     def irc_RPL_WHOISUSER(self, prefix, params):
-        print "Got WHOISUSER with prefix '%s' and params '%s'" % (prefix, params)
+        print("Got WHOISUSER with prefix '%s' and params '%s'" % (prefix, params))
 
     def irc_RPL_WHOISSERVER(self, prefix, params):
-        print "Got WHOISSERVER with prefix '%s' and params '%s'" % (prefix, params)
+        print("Got WHOISSERVER with prefix '%s' and params '%s'" % (prefix, params))
 
     def irc_RPL_WHOISOPERATOR(self, prefix, params):
-        print "Got WHOISOPERATOR with prefix '%s' and params '%s'" % (prefix, params)
+        print("Got WHOISOPERATOR with prefix '%s' and params '%s'" % (prefix, params))
 
     def irc_RPL_WHOISIDLE(self, prefix, params):
-        print "Got WHOISIDLE with prefix '%s' and params '%s'" % (prefix, params)
+        print("Got WHOISIDLE with prefix '%s' and params '%s'" % (prefix, params))
 
     def irc_RPL_ENDOFWHOIS(self, prefix, params):
-        print "Got ENDOFWHOIS with prefix '%s' and params '%s'" % (prefix, params)
+        print("Got ENDOFWHOIS with prefix '%s' and params '%s'" % (prefix, params))
         if not self.gotwhoischannel:
             if (trackednick != None):
-                print "No response from %s. Must not be present." % trackednick
+                print("No response from %s. Must not be present." % trackednick)
                 for channel in self.channelList:
                     self.trackedpresent[channel] = False
                     self.emailClient.threadsend("%s status" % self.nickname, "%s is not in channel %s" % (trackednick, channel))
@@ -370,7 +370,7 @@ class Gthx(irc.IRCClient):
                 self.log("Nickserv says: %s" % msg)
             if parseMsg.startswith("whois "):
                 whoisnick = parseMsg.split(" ",1)[1]
-                print "Doing a whois '%s'" % whoisnick
+                print("Doing a whois '%s'" % whoisnick)
                 self.whois(whoisnick)
 
         # Update the seen database, but only if it's not a private message
@@ -392,7 +392,7 @@ class Gthx(irc.IRCClient):
         tells = self.db.getTell(user)
         if tells:
             for message in tells:
-                print "Found tell for '%s' from '%s'" % (user, message[Tell.author])
+                print("Found tell for '%s' from '%s'" % (user, message[Tell.author]))
                 author = message[Tell.author]
                 timestring = timesincestring(message[Tell.timestamp])
                 text = message[Tell.message]
@@ -419,7 +419,7 @@ class Gthx(irc.IRCClient):
         # Check for specifically addressed messages
         m = re.match(self.matchNick, parseMsg)
         if m:
-            print "Found message addressed to '%s'. My nick is '%s'." % (m.group(1), self.nickname)
+            print("Found message addressed to '%s'. My nick is '%s'." % (m.group(1), self.nickname))
             parseMsg = m.group(3)
             # Mark it as a direct address so we can look for a factoid
             directAddress = True
@@ -449,14 +449,14 @@ class Gthx(irc.IRCClient):
             self.lurkerReplyChannel = replyChannel
             self.lurkerCount = 0
             self.channelCount = 0
-            print "Sending request 'NAMES %s'" % channel
+            print("Sending request 'NAMES %s'" % channel)
             self.sendLine("NAMES %s" % channel)
             return
         
         # Check for tell query
         m = self.tellQuery.match(parseMsg)
         if m and directAddress:
-            print "Got tell from '%s' for  '%s' message '%s'." % (user, m.group(1), m.group(2))
+            print("Got tell from '%s' for  '%s' message '%s'." % (user, m.group(1), m.group(2)))
             # The is in the tracked bot if the tracked bot is present and it was not a message 
             # specifically directed to us. This is a little tricky since the only way to know
             # that a message was specifically directed to us is to see if it was a direct address
@@ -471,7 +471,7 @@ class Gthx(irc.IRCClient):
             m = self.seenQuery.match(parseMsg)
             if m:
                 queryname = m.group(1)
-                print "%s asked about '%s'" % (user, queryname)
+                print("%s asked about '%s'" % (user, queryname))
                 rows = self.db.seen(queryname)
                 if len(rows) == 0:
                     reply = "Sorry, I haven't seen %s." % queryname
@@ -489,9 +489,9 @@ class Gthx(irc.IRCClient):
             if canReply:
                 m = self.googleQuery.match(parseMsg)
                 if m:
-                    queryname = urllib.quote_plus(m.group(1))
+                    queryname = urllib.parse.quote_plus(m.group(1))
                     foruser = m.group(2)
-                    print "%s asked to google '%s' for %s" % (user, queryname, foruser)
+                    print("%s asked to google '%s' for %s" % (user, queryname, foruser))
                     reply = "%s: http://lmgtfy.com/?q=%s" % (foruser, queryname)
                     self.msg(replyChannel, reply)
                     return
@@ -503,8 +503,8 @@ class Gthx(irc.IRCClient):
             if factoid:
                 invalidwords = re.match('(here|how|it|something|that|this|what|when|where|which|who|why|you)', factoid.group(1), re.IGNORECASE)
                 if not invalidwords:
-                    safeFactoid = factoid.group(1).decode("utf-8")
-                    print "%s tried to set factoid '%s'." % (user, safeFactoid)
+                    safeFactoid = factoid.group(1)
+                    print("%s tried to set factoid '%s'." % (user, safeFactoid))
                     success = self.db.addFactoid(user, factoid.group(1), True if factoid.group(2) == 'are' else False, factoid.group(4), True if not factoid.group(3) else False)
                     if canReply:
                         if success:
@@ -516,8 +516,8 @@ class Gthx(irc.IRCClient):
         if canReply:
             f = self.factoidQuery.match(parseMsg)
             if f:
-                safeFactoid = f.group(1).decode("utf-8")
-                print "factoid query from %s:%s for '%s'" % (user, channel, safeFactoid)
+                safeFactoid = f.group(1)
+                print("factoid query from %s:%s for '%s'" % (user, channel, safeFactoid))
                 answer = self.getFactoidString(f.group(1))
                 if answer:
                     # Replace !who and !channel in the reply
@@ -539,15 +539,15 @@ class Gthx(irc.IRCClient):
             query = parseMsg[5:]
             if query[-1:] == "?":
                 query = query[:-1]
-            safeFactoid = query.decode("utf-8")
-            print "info request for '%s' ReplyChannel is '%s'" % (safeFactoid, replyChannel)
+            safeFactoid = query
+            print("info request for '%s' ReplyChannel is '%s'" % (safeFactoid, replyChannel))
             refcount = 0
             answer = self.db.infoFactoid(query)
             if answer:
                 count = answer[0][6]
                 if not count:
                     count = "0"
-                print "Factoid '%s' has been referenced %s times" % (safeFactoid, count)
+                print("Factoid '%s' has been referenced %s times" % (safeFactoid, count))
                 self.msg(replyChannel, "Factoid '%s' has been referenced %s times" % (query, count))
                 for factoid in answer:
                     user = factoid[3]
@@ -555,19 +555,19 @@ class Gthx(irc.IRCClient):
                     if not user:
                         user = "Unknown"
                     if value:
-                        print "At %s, %s set to: %s" % (factoid[4], user, value)
+                        print("At %s, %s set to: %s" % (factoid[4], user, value))
                         self.msg(replyChannel, "At %s, %s set to: %s" % (factoid[4], user, value))
                     else:
-                        print "At %s, %s deleted this item" % (factoid[4], user)
+                        print("At %s, %s deleted this item" % (factoid[4], user))
                         self.msg(replyChannel, "At %s, %s deleted this item" % (factoid[4], user))
             else:
-                print "No info for factoid '%s'" % safeFactoid
+                print("No info for factoid '%s'" % safeFactoid)
                 self.msg(replyChannel, "Sorry, I couldn't find an entry for %s" % query)
 
         # Check for forget request
         if directAddress and parseMsg.startswith("forget "):
             query = parseMsg[7:]
-            print "forget request for '%s'" % query
+            print("forget request for '%s'" % query)
             forgotten = self.db.forgetFactoid(query, user)
             if canReply:
                 if forgotten:
@@ -580,12 +580,12 @@ class Gthx(irc.IRCClient):
             match = self.thingMention.search(parseMsg)
             if match:
                 thingId = int(match.group(2))
-                print "Match for thingiverse query item %s" % thingId
+                print("Match for thingiverse query item %s" % thingId)
                 rows = self.db.addThingiverseRef(thingId)
                 refs = int(rows[0][0])
                 title = rows[0][1]
                 if title is None:
-                    print "Attemping to get title for thingiverse ID %s" % thingId
+                    print("Attemping to get title for thingiverse ID %s" % thingId)
                     agent = Agent(reactor)
                     titleQuery = agent.request(
                         'GET',
@@ -596,11 +596,11 @@ class Gthx(irc.IRCClient):
                         if title:
                             title = unescape(title)
                             self.db.addThingiverseTitle(thingId, title)
-                            print "The title for thing %s is: %s " % (thingId, title)
+                            print("The title for thing %s is: %s " % (thingId, title))
                             reply = '%s linked to "%s" on thingiverse => %s IRC mentions' % (user, title, refs)
                             self.msg(replyChannel, reply)
                         else:
-                            print "No title found for thing %s" % (thingId)
+                            print("No title found for thing %s" % (thingId))
                             reply = '%s linked to thing %s on thingiverse => %s IRC mentions' % (user, thingId, refs)
                             self.msg(replyChannel, reply)
                     
@@ -610,13 +610,13 @@ class Gthx(irc.IRCClient):
                             finished.addCallback(titleResponse)
                             response.deliverBody(TitleParser(finished))
                             return finished
-                        print "Got error response from thingiverse query: %s" % (response)
+                        print("Got error response from thingiverse query: %s" % (response))
                         titleResponse(None)
                         return None
             
                     titleQuery.addCallback(queryResponse)
                 else:
-                    print "Already have a title for thing %s: %s" % (thingId, title)
+                    print("Already have a title for thing %s: %s" % (thingId, title))
                     reply = '%s linked to "%s" on thingiverse => %s IRC mentions' % (user, title, refs)
                     self.msg(replyChannel, reply)
 
@@ -626,12 +626,12 @@ class Gthx(irc.IRCClient):
             if match:
                 youtubeId = match.group(3)
                 fullLink = match.group(0)
-                print "Match for youtube query item %s" % youtubeId
+                print("Match for youtube query item %s" % youtubeId)
                 rows = self.db.addYoutubeRef(youtubeId)
                 refs = int(rows[0][0])
                 title = rows[0][1]
                 if title is None:
-                    print "Attemping to get title for youtubeId %s" % youtubeId
+                    print("Attemping to get title for youtubeId %s" % youtubeId)
                     agent = Agent(reactor)
                     titleQuery = agent.request(
                         'GET',
@@ -642,13 +642,13 @@ class Gthx(irc.IRCClient):
                         if title:
                             title = unescape(title)
                             self.db.addYoutubeTitle(youtubeId, title)
-                            print "The title for video %s is: %s " % (youtubeId, title)
+                            print("The title for video %s is: %s " % (youtubeId, title))
                             reply = '%s linked to YouTube video "%s" => %s IRC mentions' % (user, title, refs)
-                            print "Reply is: %s" % reply
+                            print("Reply is: %s" % reply)
                             self.msg(replyChannel, reply)
-                            print "Message sent."
+                            print("Message sent.")
                         else:
-                            print "No title found for youtube video %s" % (youtubeId)
+                            print("No title found for youtube video %s" % (youtubeId))
                             reply = '%s linked to a YouTube video with an unknown title  => %s IRC mentions' % (fullLink, refs)
                             self.msg(replyChannel, reply)
                     
@@ -658,14 +658,14 @@ class Gthx(irc.IRCClient):
                             finished.addCallback(titleResponse)
                             response.deliverBody(TitleParser(finished))
                             return finished
-                        print "Got error response from youtube query: %s:%s" % (response.code, response.phrase)
+                        print("Got error response from youtube query: %s:%s" % (response.code, response.phrase))
                         pprint(list(response.headers.getAllRawHeaders()))
                         titleResponse(None)
                         return None
             
                     titleQuery.addCallback(queryResponse)
                 else:
-                    print "Already have a title for item %s: %s" % (youtubeId, title)
+                    print("Already have a title for item %s: %s" % (youtubeId, title))
                     reply = '%s linked to YouTube video "%s" => %s IRC mentions' % (user, title, refs)
                     self.msg(replyChannel, reply)
                 
@@ -673,7 +673,7 @@ class Gthx(irc.IRCClient):
         m = re.match("([a-zA-Z\*_\\\[\]\{\}^`|\*][a-zA-Z0-9\*_\\\[\]\{\}^`|-]*)", sender)
         if m:
             sender = m.group(1)
-            print "* %s %s" % (sender, message)
+            print("* %s %s" % (sender, message))
             self.db.updateSeen(sender, channel, "* %s %s" % (sender, message))
             
 class GthxFactory(protocol.ClientFactory):
@@ -690,10 +690,10 @@ class GthxFactory(protocol.ClientFactory):
         self.dbPassword = dbPassword
         self.dbDatabase = dbDatabase
         self.nickservPassword = nickservPassword
-        print "GthxFactory init"
+        print("GthxFactory init")
         
     def buildProtocol(self, addr):
-        print "GthxFactory build protocol"
+        print("GthxFactory build protocol")
         try:
             p = Gthx(dbUser, dbPassword, dbDatabase, nickservPassword)
             p.factory = self
@@ -701,45 +701,46 @@ class GthxFactory(protocol.ClientFactory):
             p.nickname = self.nick
             return p
         except Exception as e:
-            print "Failed to create Gthx instance: %s" % str(e)
-            print "Traceback: %s" % traceback.format_exc()
+            print("Failed to create Gthx instance: %s" % str(e))
+            print("Traceback: %s" % traceback.format_exc())
             # TODO: Figure out how to handle the error and exit here
             raise
 
     def clientConnectionLost(self, connector, reason):
         """If we get disconnected, reconnect to server."""
-        print "GthxFactory client connection"
+        print("GthxFactory client connection")
         # TODO: Send email notification
         connector.connect()
 
     def clientConnectionFailed(self, connector, reason):
-        print "connection failed:", reason
+        print("connection failed:", reason)
         # TODO: Send email notification
         reactor.stop()
 
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        raise SystemExit("gthx.py needs to be invoked with the bot name which is used to pick the config file")
+        raise SystemExit("gthx.py needs to be invoked with the bot name which is used to pick the config file or 'test' to use gthx.config.local")
     
     if sys.argv[1] == 'test':
         configFile = "./gthx.config.local"
     else:
         configFile = "/etc/gthx/%s.config" % sys.argv[1]
-        
-    config = ConfigParser.ConfigParser()
+
+    print("gthx: Loading config from", configFile)
+    config = configparser.ConfigParser()
     results = config.read(configFile)
     if not results:
         raise SystemExit("Failed to read config file '%s'" % (configFile))
 
     try:
         trackednick = config.get('IRC','GTHX_TRACKED_NICK')
-    except ConfigParser.NoOptionError:
+    except configparser.NoOptionError:
         trackednick = None
 
     try:
         nickservPassword = config.get("IRC", "GTHX_NICKSERV_PASSWORD")
-    except ConfigParser.NoOptionError:
+    except configparser.NoOptionError:
         nickservPassword = None
 
     channels = config.get('IRC','GTHX_CHANNELS')
@@ -748,9 +749,9 @@ if __name__ == '__main__':
     logfile = "/tmp/%s.log" % mynick
 
     if (channels == None):
-        print "No channel specified. Did you set GTHX_CHANNELS?"
+        print("No channel specified. Did you set GTHX_CHANNELS?")
     elif (mynick == None):
-        print "No nick specified. Did you set GTHX_NICK?"
+        print("No nick specified. Did you set GTHX_NICK?")
     else:
         emailClient = None
         try:
@@ -763,7 +764,6 @@ if __name__ == '__main__':
             dbPassword = config.get('MYSQL','GTHX_MYSQL_PASSWORD')
             dbDatabase = config.get('MYSQL','GTHX_MYSQL_DATABASE')
     
-            
             # Setup email notification
             emailClient = Email(email_user, email_password, from_email, to_email, email_server)
 
@@ -779,17 +779,17 @@ if __name__ == '__main__':
             # run bot
             reactor.run()
         except ValueError as e:
-            print "Failed to start: %s" % e
+            print("Failed to start: %s" % e)
         except error.ReactorNotRestartable as e:
-            print "Got severe failure--probably ^C. Exiting"
+            print("Got severe failure--probably ^C. Exiting")
             emailClient.send("%s exiting" % mynick, "%s is exiting due to a user requested shutdown." % mynick)
             # TODO: Figure out a way to gracefully shutdown and close the DB connection
         except Exception as e:
-            print "Overall failure: %s" % str(e)
-            print "Traceback: %s" % traceback.format_exc()
+            print("Overall failure: %s" % str(e))
+            print("Traceback: %s" % traceback.format_exc())
             message = "%s stopped due to an exception: %s\n\n" % (mynick, str(e))
             message += traceback.format_exc()
             if emailClient:
                 emailClient.send("%s exception" % mynick, message)
-            print "Waiting 5 minutes to retry..."
+            print("Waiting 5 minutes to retry...")
             # TODO: Add logging here

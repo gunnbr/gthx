@@ -38,17 +38,17 @@ class DbAccess():
                 self.db = MySQLdb.connect(host='localhost', user=self.dbuser, passwd=self.dbpassword, db=self.dbname)
                 self.cur = self.db.cursor()
                 return
-            except MySQLdb.Error, e:
+            except MySQLdb.Error as e:
                 try:
-                    print "Failed to connect. MySQL Error [%d]: %s" % (e.args[0], e.args[1])
+                    print("Failed to connect. MySQL Error [%d]: %s" % (e.args[0], e.args[1]))
                     retries = retries - 1
                     if (retries > 0):
-                        print "Waiting to retry (%d)" % retries
+                        print("Waiting to retry (%d)" % retries)
                         time.sleep(30)
                     else:
                         raise e
                 except IndexError:
-                    print "MySQL Error: %s" % str(e)
+                    print("MySQL Error: %s" % str(e))
                     raise e
         
     def executeAndCommit(self, command, *args):
@@ -58,23 +58,23 @@ class DbAccess():
                 status = self.cur.execute(command, args)
                 self.db.commit()
                 return status
-            except MySQLdb.Error, e:
+            except MySQLdb.Error as e:
                 try:
-                    print "executeAndCommit(): MySQL Error [%d]: %s" % (e.args[0], e.args[1])
+                    print("executeAndCommit(): MySQL Error [%d]: %s" % (e.args[0], e.args[1]))
                 except IndexError:
-                    print "executeAndCommit(): MySQL Error: %s" % str(e)
+                    print("executeAndCommit(): MySQL Error: %s" % str(e))
                 if (e.args[0] == 2006):
                     self.reconnect()
                 else:
                     try:
-                        print "Rolling back..."
+                        print("Rolling back...")
                         self.db.rollback()
                     except MySQLdb.Error:
-                        print "Rollback failed."
+                        print("Rollback failed.")
                     
                 retries = retries - 1
                 if (retries > 0):
-                    print "Retrying..."
+                    print("Retrying...")
                 else:
                     return None
 
@@ -85,16 +85,16 @@ class DbAccess():
                 self.cur.execute(command, args)
                 rows = self.cur.fetchall()
                 return rows
-            except MySQLdb.Error, e:
+            except MySQLdb.Error as e:
                 try:
-                    print "executeAndFetchAll(): MySQL Error [%d] on line %d: %s" % (e.args[0], sys.exc_info()[-1].tb_lineno, e.args[1])
+                    print("executeAndFetchAll(): MySQL Error [%d] on line %d: %s" % (e.args[0], sys.exc_info()[-1].tb_lineno, e.args[1]))
                 except IndexError:
-                    print "executeAndFetchAll(): MySQL Error: %s" % str(e)
+                    print("executeAndFetchAll(): MySQL Error: %s" % str(e))
                 if (e.args[0] == 2006):
                     self.reconnect()
                 retries = retries - 1
                 if (retries > 0):
-                    print "Retrying..."
+                    print("Retrying...")
                 else:
                     return
 
@@ -117,7 +117,7 @@ class DbAccess():
     def addFactoid(self, nick, item, are, value, replace):
         rows = self.executeAndFetchAll("SELECT id FROM factoids WHERE item=%s AND locked=1 LIMIT 1", item)
         if rows:
-            print "Can't set factoid %s because it's locked." % item
+            print("Can't set factoid %s because it's locked." % item)
             return False
 
         # If we're replacing, first delete all the existing rows
@@ -131,7 +131,7 @@ class DbAccess():
     def forgetFactoid(self, item, nick):
         rows = self.executeAndFetchAll("SELECT id FROM factoids WHERE item=%s AND locked=1 LIMIT 1", item);
         if rows:
-            print "Can't forget factoid %s because it's locked." % item
+            print("Can't forget factoid %s because it's locked." % item)
             return False
 
         forgotten = False

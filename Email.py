@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, os, thread
+import sys, os, _thread
 import smtplib
 
 class Email():
@@ -18,13 +18,13 @@ class Email():
 
     def threadsend(self, subject, message):
         try:
-            thread.start_new_thread(self.send, (subject, message))
+            _thread.start_new_thread(self.send, (subject, message))
         except Exception as e:
-            print "Failed to start a thread email: %s" % e
+            print("Failed to start a thread email: %s" % e)
         
     def send(self, subject, message):
         if ((self.user != None) and (self.password != None) and (self.server != None)):
-            print "Sending email notification..."
+            print("Sending email notification...")
 
             # Create a text/plain message
             msg = "To: %s\n" % self.to_email
@@ -43,7 +43,7 @@ class Email():
                 s.sendmail(self.from_email, [self.to_email], msg)
                 s.quit()
             except Exception as e:
-                print "Failed to send email notification: %s" % e
+                print("Failed to send email notification: %s" % e)
             
-            print "Done with email"
+            print("Done with email")
 

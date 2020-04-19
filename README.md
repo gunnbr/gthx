@@ -18,7 +18,7 @@ from the code, I'm far from a python expert and welcome any fixes or changes to 
 To install a new bot, make sure you already have installed:
 * MySQL or MariaDB
 * libmysqlclient-dev
-* Python 2.7
+* Python 3.6+
 
 ### Install required Python libraries
 The currently required libraries are:
@@ -26,7 +26,7 @@ The currently required libraries are:
 * Twisted (Python library)
 To install these automatically, run:
 ```
-pip install -r reuirements.txt
+pip install -r requirements.txt
 ```
 
 ### Create a new database
