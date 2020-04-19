@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+# Look at character set for database:
+# SELECT * FROM INFORMATION_SCHEMA.SCHEMATA;
+# Look at character set for tables:
+# SHOW CREATE TABLE <tableName>;
+# Change locked factoids to not print anything and instead throw an exception
+
 import time, sys, os, string
 import MySQLdb
 
@@ -36,7 +42,7 @@ class DbAccess():
         retries = 5
         while True:
             try:
-                self.db = MySQLdb.connect(host=self.dbHost, user=self.dbuser, passwd=self.dbpassword, db=self.dbname,charset='utf8')
+                self.db = MySQLdb.connect(host=self.dbHost, user=self.dbuser, passwd=self.dbpassword, db=self.dbname,charset='utf8mb4')
                 self.cur = self.db.cursor()
                 return
             except MySQLdb.Error as e:

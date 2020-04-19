@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+
+# TODO:
+#   Make this use a different DB for testing!
+#   Verify that there's a 'tell' test with message including emoji
+#   Test maximum length of username (maybe not a problem since they can't actually contain unicode according to IRC spec?)
+
 import unittest
 import os
 import time

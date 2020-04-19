@@ -31,11 +31,11 @@ pip install -r requirements.txt
 
 ### Create a new database
 Once that is done, create a new database and user in MySQL for gthx to use and grant the user full permissions
-on that database. Something like:
+on that database. Make sure that the database is set to use the "real" UTF-8 character set. Something like:
 
 ```
-create database gthx;
-grant all on gthx.* to 'gthxuser' identified by 'password';
+CREATE DATABASE gthx CHARACTER SET = 'utf8mb4' COLLATE = 'utf8mb4_unicode_ci';
+GRANT ALL ON gthx.* TO 'gthxuser' IDENTIFIED BY 'password';
 ```
 
 Run the gthx DB install script:
