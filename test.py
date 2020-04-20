@@ -4,16 +4,15 @@
 #   Make this use a different DB for testing!
 #   Verify that there's a 'tell' test with message including emoji
 #   Test maximum length of username (maybe not a problem since they can't actually contain unicode according to IRC spec?)
+#   Test that UpdateSeen doesn't have SQL injection problem with message (currently it does)
 
 import unittest
 import os
 import time
 import configparser
 
-from DbAccess import DbAccess
-from DbAccess import Seen
-from DbAccess import Tell
-from datetime import datetime
+from DbAccess import DbAccess, Seen, Tell
+from datetime import datetime, timezone
 
 class DbAccessSeenTest(unittest.TestCase):
     missinguser = "somerandomuser"
@@ -52,7 +51,8 @@ class DbAccessSeenTest(unittest.TestCase):
         self.assertEqual(data[Seen.name], user, "Wrong username returned for seen user")
         self.assertEqual(data[Seen.channel], channel, "Wrong channel returned for a seen user")
 
-        delta = datetime.now() - data[Seen.timestamp]
+        delta = datetime.now(timezone.utc) - data[Seen.timestamp].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for a seen user: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a seen user: delta is %d" % delta.total_seconds())
         self.assertEqual(data[Seen.message], message, "Wrong message returned for a seen user")
         
@@ -71,7 +71,8 @@ class DbAccessSeenTest(unittest.TestCase):
 
         data=rows[0]
         
-        delta = datetime.now() - data[Seen.timestamp]
+        delta = datetime.now(timezone.utc) - data[Seen.timestamp].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for a seen user: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, 'Wrong time returned for a seen user: delta is %d' % (delta.total_seconds(), ))
 
         # Now wait a couple seconds and verify that the delta has changed
@@ -82,7 +83,7 @@ class DbAccessSeenTest(unittest.TestCase):
 
         data=rows[0]
         
-        delta = datetime.now() - data[Seen.timestamp]
+        delta = datetime.now(timezone.utc) - data[Seen.timestamp].replace(tzinfo=timezone.utc)
         self.assertGreater(delta.total_seconds(), 1, 'Wrong time returned for a seen user: delta is %d' % delta.total_seconds())
 
         # Now update the same user again, then verify that the time has been updated.
@@ -93,7 +94,8 @@ class DbAccessSeenTest(unittest.TestCase):
 
         data=rows[0]
         
-        delta = datetime.now() - data[Seen.timestamp]
+        delta = datetime.now(timezone.utc) - data[Seen.timestamp].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for a seen user: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, 'Wrong time returned for a seen user: delta is %d' % delta.total_seconds())
 
     def test_update_of_seen_with_nick_including_backslashes(self):
@@ -131,7 +133,18 @@ class DbAccessSeenTest(unittest.TestCase):
 
         self.db.updateSeen(user, channel, message)
 
-        # First test the normal case
+        rows = self.db.seen(user)
+        self.assertEqual(len(rows), 1, "Returned incorrect data for a user that has been seen: %d" % len(rows))
+
+        # Seen currently updated with this:
+        # "UPDATE seen SET channel=%s, timestamp=UTC_TIMESTAMP(), message=%s where id=%s", channel, message, id)
+        # Looks like this will cause a problem too:
+        # message = "blah; DROP TABLE SEEN;SELECT * FROM SEEN"
+        user = "hax0r"
+        message = '"blah"; DROP TABLE SEEN;SELECT * FROM SEEN'
+
+        self.db.updateSeen(user, channel, message)
+
         rows = self.db.seen(user)
         self.assertEqual(len(rows), 1, "Returned incorrect data for a user that has been seen: %d" % len(rows))
         
@@ -150,7 +163,8 @@ class DbAccessSeenTest(unittest.TestCase):
         self.assertEqual(data[Seen.name], user, "Wrong username returned for a unicode seen user")
         self.assertEqual(data[Seen.channel], channel, "Wrong channel returned for a unicode seen user")
 
-        delta = datetime.now() - data[Seen.timestamp]
+        delta = datetime.now(timezone.utc) - data[Seen.timestamp].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for a unicode seen user: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a unicode seen user: delta is %d" % delta.total_seconds())
         self.assertEqual(data[Seen.message], message, "Wrong message returned for a unicode seen message")
         
@@ -201,7 +215,8 @@ class DbAccessFactoidTest(unittest.TestCase):
         self.assertEqual(factoid[3], definition, "Factoid failed to retrieve the defintion correctly")
         self.assertEqual(factoid[4], user, "Factoid failed to retrieve the user correctly")
 
-        delta = datetime.now() - factoid[5]
+        delta = datetime.now(timezone.utc) - factoid[5].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for a factoid date set: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a factoid date set: delta is %d" % delta.total_seconds())
 
         self.assertFalse(factoid[6], "Factoid failed to retrieve the locked flag correctly")
@@ -227,7 +242,8 @@ class DbAccessFactoidTest(unittest.TestCase):
         self.assertEqual(factoid[3], definition, "Factoid failed to retrieve the defintion correctly")
         self.assertEqual(factoid[4], user, "Factoid failed to retrieve the user correctly")
 
-        delta = datetime.now() - factoid[5]
+        delta = datetime.now(timezone.utc) - factoid[5].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for a factoid date set: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a factoid date set: delta is %d" % delta.total_seconds())
 
         self.assertFalse(factoid[6], "Factoid failed to retrieve the locked flag correctly")
@@ -258,7 +274,8 @@ class DbAccessFactoidTest(unittest.TestCase):
         self.assertEqual(factoid[3], definition, "Factoid failed to retrieve the defintion correctly")
         self.assertEqual(factoid[4], user, "Factoid failed to retrieve the user correctly")
 
-        delta = datetime.now() - factoid[5]
+        delta = datetime.now(timezone.utc) - factoid[5].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for a factoid date set: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a factoid date set: delta is %d" % delta.total_seconds())
 
         self.assertFalse(factoid[6], "Factoid failed to retrieve the locked flag correctly")
@@ -270,7 +287,7 @@ class DbAccessFactoidTest(unittest.TestCase):
         self.assertEqual(factoid[3], definition2, "Factoid failed to retrieve the defintion correctly")
         self.assertEqual(factoid[4], user2, "Factoid failed to retrieve the user correctly")
 
-        delta = datetime.now() - factoid[5]
+        delta = datetime.now(timezone.utc) - factoid[5].replace(tzinfo=timezone.utc)
         self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a factoid date set: delta is %d" % delta.total_seconds())
 
         self.assertFalse(factoid[6], "Factoid failed to retrieve the locked flag correctly")
@@ -289,7 +306,8 @@ class DbAccessFactoidTest(unittest.TestCase):
         self.assertEqual(factoid[3], replacement, "Factoid failed to retrieve the defintion correctly")
         self.assertEqual(factoid[4], user3, "Factoid failed to retrieve the user correctly")
 
-        delta = datetime.now() - factoid[5]
+        delta = datetime.now(timezone.utc) - factoid[5].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for a factoid date set: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a factoid date set: delta is %d" % delta.total_seconds())
 
         self.assertFalse(factoid[6], "Factoid failed to retrieve the locked flag correctly")
@@ -374,7 +392,8 @@ class DbAccessFactoidTest(unittest.TestCase):
         self.assertEqual(history[1], counteditem, "Factoid history has the wrong item name")
         self.assertEqual(history[2], definition, "Factoid history has the wrong definition")
         self.assertEqual(history[3], user, "Factoid history has the wrong username")
-        delta = datetime.now() - history[4]
+        delta = datetime.now(timezone.utc) - history[4].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for factoid history: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
         self.assertIsNone(history[5], "Factoid history has the wrong item name the second place: %s" % history[5])
         self.assertIsNone(history[6], "Factoid history has the wrong count: %s" % history[6])
@@ -395,11 +414,13 @@ class DbAccessFactoidTest(unittest.TestCase):
         self.assertEqual(history[1], counteditem, "Factoid history has the wrong item name")
         self.assertEqual(history[2], definition, "Factoid history has the wrong definition")
         self.assertEqual(history[3], user, "Factoid history has the wrong username")
-        delta = datetime.now() - history[4]
+        delta = datetime.now(timezone.utc) - history[4].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for factoid history: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
         self.assertEqual(history[5], counteditem, "Factoid history has the wrong item name the second place: %s" % history[5])
         self.assertEqual(history[6], 1, "Factoid history has the wrong count: %s" % history[6])
-        delta = datetime.now() - history[7]
+        delta = datetime.now(timezone.utc) - history[7].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for factoid history: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
         
         # Finally do a few more references
@@ -420,11 +441,13 @@ class DbAccessFactoidTest(unittest.TestCase):
         self.assertEqual(history[1], counteditem, "Factoid history has the wrong item name")
         self.assertEqual(history[2], definition, "Factoid history has the wrong definition")
         self.assertEqual(history[3], user, "Factoid history has the wrong username")
-        delta = datetime.now() - history[4]
+        delta = datetime.now(timezone.utc) - history[4].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for factoid history: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
         self.assertEqual(history[5], counteditem, "Factoid history has the wrong item name the second place: %s" % history[5])
         self.assertEqual(history[6], 5, "Factoid history has the wrong count: %s" % history[6])
-        delta = datetime.now() - history[7]
+        delta = datetime.now(timezone.utc) - history[7].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for factoid history: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
         
     def test_get_factoid_doesnt_set_refs(self):
@@ -476,7 +499,8 @@ class DbAccessFactoidTest(unittest.TestCase):
         self.assertEqual(history[1], item, "Factoid history has the wrong item name")
         self.assertEqual(history[2], definition, "Factoid history has the wrong definition: '%s'" % history[2])
         self.assertEqual(history[3], user, "Factoid history has the wrong username")
-        delta = datetime.now() - history[4]
+        delta = datetime.now(timezone.utc) - history[4].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for factoid history: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
         self.assertIsNone(history[5], "Factoid history ref count has an item name when it shouldn't.")
         self.assertIsNone(history[6], "Factoid history has a count when it shouldn't")
@@ -487,7 +511,8 @@ class DbAccessFactoidTest(unittest.TestCase):
         self.assertEqual(history[1], item, "Factoid history has the wrong item name")
         self.assertIsNone(history[2], "Factoid history for forgotten entry has a definition when it shouldn't")
         self.assertEqual(history[3], userWhoDeletes, "Factoid history for forgotten entry has the wrong username")
-        delta = datetime.now() - history[4]
+        delta = datetime.now(timezone.utc) - history[4].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for factoid history: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
         self.assertIsNone(history[5], "Factoid history ref count has an item name when it shouldn't.")
         self.assertIsNone(history[6], "Factoid history has a count when it shouldn't")
@@ -584,7 +609,8 @@ class DbAccessFactoidTest(unittest.TestCase):
         self.assertEqual(history[1], item, "Factoid history has the wrong item name")
         self.assertIsNone(history[2], "Factoid history has the wrong definition: '%s'" % history[2])
         self.assertEqual(history[3], userWhoDeletes, "Factoid history has the wrong username")
-        delta = datetime.now() - history[4]
+        delta = datetime.now(timezone.utc) - history[4].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for factoid history: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
         self.assertIsNone(history[5], "Factoid history ref count has an item name when it shouldn't.")
         self.assertIsNone(history[6], "Factoid history has a count when it shouldn't")
@@ -595,7 +621,8 @@ class DbAccessFactoidTest(unittest.TestCase):
         self.assertEqual(history[1], item, "Factoid history has the wrong item name")
         self.assertEqual(history[2], definition2, "Factoid history has the wrong definition: '%s'" % history[2])
         self.assertEqual(history[3], user2, "Factoid history has the wrong username")
-        delta = datetime.now() - history[4]
+        delta = datetime.now(timezone.utc) - history[4].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for factoid history: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
         self.assertIsNone(history[5], "Factoid history ref count has an item name when it shouldn't.")
         self.assertIsNone(history[6], "Factoid history has a count when it shouldn't")
@@ -606,7 +633,8 @@ class DbAccessFactoidTest(unittest.TestCase):
         self.assertEqual(history[1], item, "Factoid history has the wrong item name")
         self.assertEqual(history[2], definition, "Factoid history for forgotten entry has a definition when it shouldn't")
         self.assertEqual(history[3], user, "Factoid history for forgotten entry has the wrong username")
-        delta = datetime.now() - history[4]
+        delta = datetime.now(timezone.utc) - history[4].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for factoid history: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
         self.assertIsNone(history[5], "Factoid history ref count has an item name when it shouldn't.")
         self.assertIsNone(history[6], "Factoid history has a count when it shouldn't")
@@ -644,7 +672,8 @@ class DbAccessFactoidTest(unittest.TestCase):
         self.assertEqual(history[1], item, "Factoid history has the wrong item name")
         self.assertEqual(history[2], definition3, "Factoid history has wrong definition: '%s'" % history[2])
         self.assertEqual(history[3], user3, "Factoid history has the wrong username")
-        delta = datetime.now() - history[4]
+        delta = datetime.now(timezone.utc) - history[4].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for factoid history: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
         self.assertIsNone(history[5], "Factoid history ref count has an item name when it shouldn't.")
         self.assertIsNone(history[6], "Factoid history has a count when it shouldn't")
@@ -655,7 +684,8 @@ class DbAccessFactoidTest(unittest.TestCase):
         self.assertEqual(history[1], item, "Factoid history has the wrong item name")
         self.assertIsNone(history[2], "Factoid history has the definition when it shouldn't: '%s'" % history[2])
         self.assertEqual(history[3], user3, "Factoid history has the wrong username")
-        delta = datetime.now() - history[4]
+        delta = datetime.now(timezone.utc) - history[4].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for factoid history: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
         self.assertIsNone(history[5], "Factoid history ref count has an item name when it shouldn't.")
         self.assertIsNone(history[6], "Factoid history has a count when it shouldn't")
@@ -666,7 +696,8 @@ class DbAccessFactoidTest(unittest.TestCase):
         self.assertEqual(history[1], item, "Factoid history has the wrong item name")
         self.assertEqual(history[2], definition2, "Factoid history has a definition: %s" % history[2])
         self.assertEqual(history[3], user2, "Factoid history for forgotten entry has the wrong username")
-        delta = datetime.now() - history[4]
+        delta = datetime.now(timezone.utc) - history[4].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for factoid history: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
         self.assertIsNone(history[5], "Factoid history ref count has an item name when it shouldn't.")
         self.assertIsNone(history[6], "Factoid history has a count when it shouldn't")
@@ -677,7 +708,8 @@ class DbAccessFactoidTest(unittest.TestCase):
         self.assertEqual(history[1], item, "Factoid history has the wrong item name")
         self.assertEqual(history[2], definition, "Factoid history has the wrong definition: '%s'" % history[2])
         self.assertEqual(history[3], user, "Factoid history has the wrong username")
-        delta = datetime.now() - history[4]
+        delta = datetime.now(timezone.utc) - history[4].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for factoid history: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, "Factoid history has the wrong time. delta is %d" % delta.total_seconds())
         self.assertIsNone(history[5], "Factoid history ref count has an item name when it shouldn't.")
         self.assertIsNone(history[6], "Factoid history has a count when it shouldn't")
@@ -777,7 +809,8 @@ class DbAccessTellTest(unittest.TestCase):
         self.assertEqual(tell[4], message, "Got wrong message for a tell")
         self.assertEqual(tell[5], kthxKnows, "Got wrong inTracked for a tell")
 
-        delta = datetime.now() - tell[3]
+        delta = datetime.now(timezone.utc) - tell[3].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for a tell: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a tell date set: delta is %d" % delta.total_seconds())
 
         # Now get again for the same user to make sure they've been cleared
@@ -803,7 +836,8 @@ class DbAccessTellTest(unittest.TestCase):
         self.assertEqual(tell[4], message, "Got wrong message for a tell")
         self.assertEqual(tell[5], kthxKnows, "Got wrong inTracked for a tell")
 
-        delta = datetime.now() - tell[3]
+        delta = datetime.now(timezone.utc) - tell[3].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for tell: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a tell date set: delta is %d" % delta.total_seconds())
 
         # Now get again for the same user to make sure they've been cleared
@@ -839,7 +873,8 @@ class DbAccessTellTest(unittest.TestCase):
         self.assertEqual(tell[4], message, "Got wrong message for a tell")
         self.assertEqual(tell[5], kthxKnows, "Got wrong inTracked for a tell")
 
-        delta = datetime.now() - tell[3]
+        delta = datetime.now(timezone.utc) - tell[3].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for tell: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a tell date set: delta is %d" % delta.total_seconds())
 
         tell = data[1]
@@ -848,7 +883,8 @@ class DbAccessTellTest(unittest.TestCase):
         self.assertEqual(tell[4], message2, "Got wrong message for a tell")
         self.assertEqual(tell[5], kthxKnows2, "Got wrong inTracked for a tell")
 
-        delta = datetime.now() - tell[3]
+        delta = datetime.now(timezone.utc) - tell[3].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for a tell: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a tell date set: delta is %d" % delta.total_seconds())
 
         tell = data[2]
@@ -857,7 +893,8 @@ class DbAccessTellTest(unittest.TestCase):
         self.assertEqual(tell[4], message3, "Got wrong message for a tell")
         self.assertEqual(tell[5], kthxKnows3, "Got wrong inTracked for a tell")
 
-        delta = datetime.now() - tell[3]
+        delta = datetime.now(timezone.utc) - tell[3].replace(tzinfo=timezone.utc)
+        self.assertGreaterEqual(delta.total_seconds(),0,'Wrong time returned for a tell: delta is %d' % delta.total_seconds())
         self.assertLess(delta.total_seconds(), 2, "Wrong time returned for a tell date set: delta is %d" % delta.total_seconds())
 
         # Now get again for the same user to make sure they've been cleared

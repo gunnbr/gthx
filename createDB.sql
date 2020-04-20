@@ -1,6 +1,8 @@
 
 # Important to have the DB set to the "real" utf8 character set.
 # CREATE DATABASE gthx CHARACTER SET = 'utf8mb4' COLLATE = 'utf8mb4_unicode_ci';
+# TODO:
+#   Change name timestamp in seen and tell tables to something else since timestamp is a different type
 
 CREATE TABLE `factoid_history` (
   `id` int(11) NOT NULL AUTO_INCREMENT,

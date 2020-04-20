@@ -117,9 +117,9 @@ class DbAccess():
         rows = self.executeAndFetchAll("SELECT id FROM seen WHERE name = %s", nick)
         if rows:
             id = int(rows[0][0])
-            self.executeAndCommit("UPDATE seen SET channel=%s, timestamp=NOW(), message=%s where id=%s", channel, message, id)
+            self.executeAndCommit("UPDATE seen SET channel=%s, timestamp=UTC_TIMESTAMP(), message=%s where id=%s", channel, message, id)
         else:
-            self.executeAndCommit("INSERT INTO seen (name,channel,timestamp,message) VALUES (%s,%s,NOW(),%s)", nick, channel, message);
+            self.executeAndCommit("INSERT INTO seen (name,channel,timestamp,message) VALUES (%s,%s,UTC_TIMESTAMP(),%s)", nick, channel, message);
 
     def addFactoid(self, nick, item, are, value, replace):
         rows = self.executeAndFetchAll("SELECT id FROM factoids WHERE item=%s AND locked=1 LIMIT 1", item)
@@ -163,7 +163,7 @@ class DbAccess():
                                           LIMIT 4""", item)
 
     def addTell(self, author, recipient, message, inTracked):
-        self.executeAndCommit("INSERT INTO tell (author, recipient, timestamp, message, inTracked) VALUES (%s,%s,NOW(),%s,%s)", author, recipient, message, inTracked);
+        self.executeAndCommit("INSERT INTO tell (author, recipient, timestamp, message, inTracked) VALUES (%s,%s,UTC_TIMESTAMP(),%s,%s)", author, recipient, message, inTracked);
         return True
 
     def getTell(self, recipient):
