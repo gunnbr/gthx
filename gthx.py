@@ -625,7 +625,7 @@ class Gthx(irc.IRCClient):
             match = self.youtubeMention.search(parseMsg)
             if match:
                 youtubeId = match.group(3)
-                fullLink = match.group(0)
+                # fullLink = match.group(0) 
                 print("Match for youtube query item %s" % youtubeId)
                 rows = self.db.addYoutubeRef(youtubeId)
                 refs = int(rows[0][0])
