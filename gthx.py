@@ -625,7 +625,7 @@ class Gthx(irc.IRCClient):
             match = self.youtubeMention.search(parseMsg)
             if match:
                 youtubeId = match.group(3)
-                fullLink = match.group(0)
+                # fullLink = match.group(0) 
                 print("Match for youtube query item %s" % youtubeId)
                 rows = self.db.addYoutubeRef(youtubeId)
                 refs = int(rows[0][0])
@@ -649,7 +649,7 @@ class Gthx(irc.IRCClient):
                             print("Message sent.")
                         else:
                             print("No title found for youtube video %s" % (youtubeId))
-                            reply = '%s linked to a YouTube video with an unknown title  => %s IRC mentions' % (fullLink, refs)
+                            reply = '%s linked to a YouTube video with an unknown title (ID: %s)  => %s IRC mentions' % (user, youtubeId, refs)
                             self.msg(replyChannel, reply)
                     
                     def queryResponse(response):
