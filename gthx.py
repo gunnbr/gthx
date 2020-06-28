@@ -34,15 +34,23 @@ from Email import Email
 
 from pprint import pprint
 
-VERSION = "gthx version 1.32 2019-01-25"
+VERSION = "gthx version 1.33 2020-06-27"
 trackednick = ""
 channel = ""
 mynick = ""
 
 
 def unescape(htmlString):
-    h = HTMLParser()
-    return h.unescape(htmlString).encode("utf-8")
+    try:
+        h = HTMLParser()
+        testString = htmlString.decode("utf-8")
+        unescaped = h.unescape(testString)
+        encoded = unescaped.encode("utf-8")
+        return encoded
+    except Exception as e:
+        print("unescape failure.")
+        print(e)
+        return htmlString
 
 class TitleParser(LineOnlyReceiver):
     def __init__(self, finished):
@@ -50,6 +58,7 @@ class TitleParser(LineOnlyReceiver):
         self.finished = finished
         self.delimiter='\n'
         self.titleQuery = re.compile("<title>(.*) - .*<\/title>", re.IGNORECASE | re.MULTILINE)
+        self.metaQuery = re.compile("<meta name=\"title\" content=\"(.*)\"", re.IGNORECASE | re.MULTILINE)
 
     def lineReceived(self, line):
         if not line: return
@@ -57,6 +66,11 @@ class TitleParser(LineOnlyReceiver):
         if match:
             self.title = match.group(1)
             print "Got title of: ", self.title
+            self.loseConnection()
+        match = self.metaQuery.search(line)
+        if match:
+            self.title = match.group(1)
+            print "Got meta title of: ", self.title
             self.loseConnection()
                 
     def connectionLost(self, reason):
@@ -625,7 +639,6 @@ class Gthx(irc.IRCClient):
             match = self.youtubeMention.search(parseMsg)
             if match:
                 youtubeId = match.group(3)
-                fullLink = match.group(0)
                 print "Match for youtube query item %s" % youtubeId
                 rows = self.db.addYoutubeRef(youtubeId)
                 refs = int(rows[0][0])
@@ -639,17 +652,22 @@ class Gthx(irc.IRCClient):
                         Headers({'User-Agent': ['gthx IRC bot']}),
                         None)
                     def titleResponse(title):
+                        print "Back to title response"
                         if title:
-                            title = unescape(title)
-                            self.db.addYoutubeTitle(youtubeId, title)
-                            print "The title for video %s is: %s " % (youtubeId, title)
-                            reply = '%s linked to YouTube video "%s" => %s IRC mentions' % (user, title, refs)
-                            print "Reply is: %s" % reply
-                            self.msg(replyChannel, reply)
-                            print "Message sent."
+                            try:
+                                title = unescape(title)
+                                self.db.addYoutubeTitle(youtubeId, title)
+                                print "The title for video %s is: %s " % (youtubeId, title)
+                                reply = '%s linked to YouTube video "%s" => %s IRC mentions' % (user, title, refs)
+                                print "Reply is: %s" % reply
+                                self.msg(replyChannel, reply)
+                                print "Message sent."
+                            except Exception as e:
+                                print("Title reply failure.")
+                                print(e)
                         else:
                             print "No title found for youtube video %s" % (youtubeId)
-                            reply = '%s linked to a YouTube video with an unknown title  => %s IRC mentions' % (fullLink, refs)
+                            reply = '%s linked to a YouTube video with an unknown title  => %s IRC mentions' % (user, refs)
                             self.msg(replyChannel, reply)
                     
                     def queryResponse(response):
